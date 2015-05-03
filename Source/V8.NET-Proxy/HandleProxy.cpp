@@ -8,7 +8,7 @@ v8::Handle<Script> HandleProxy::Script() { return _Script; }
 // ------------------------------------------------------------------------------------------------------------------------
 
 HandleProxy::HandleProxy(V8EngineProxy* engineProxy, int32_t id)
-    : ProxyBase(HandleProxyClass), _Type((JSValueType)-1), _ID(id), _ManagedReferenceCount(0), _ObjectID(-1), _CLRTypeID(-1), __EngineProxy(0)
+    : ProxyBase(HandleProxyClass), _ID(id), _ObjectID(-1), _CLRTypeID(-1), _Type(static_cast<JSValueType>(-1)), _ManagedReferenceCount(0), __EngineProxy(0)
 {
     _EngineProxy = engineProxy;
     _EngineID = _EngineProxy->_EngineID;
@@ -223,13 +223,13 @@ int32_t HandleProxy::GetManagedObjectID()
             {
                 auto field = obj->GetInternalField(1); // (may be faster than hidden values)
                 if (field->IsExternal())
-                    _ObjectID = (int32_t)field.As<External>()->Value();
+                    _ObjectID = reinterpret_cast<int32_t>(field.As<External>()->Value());
             }
             else
             {
                 auto handle = obj->GetHiddenValue(NewString("ManagedObjectID"));
                 if (!handle.IsEmpty() && handle->IsInt32())
-                    _ObjectID = (int32_t)handle->Int32Value();
+                    _ObjectID = static_cast<int32_t>(handle->Int32Value());
             }
 
             if (_ObjectID == -1)
@@ -280,7 +280,7 @@ void HandleProxy::MakeStrong()
 
 void HandleProxy::_RevivableCallback(const WeakCallbackData<Value, HandleProxy>& data)
 {
-    auto engineProxy = (V8EngineProxy*)data.GetIsolate()->GetData(0);
+    auto engineProxy = static_cast<V8EngineProxy*>(data.GetIsolate()->GetData(0));
     auto handleProxy = data.GetParameter();
 
     auto dispose = true;

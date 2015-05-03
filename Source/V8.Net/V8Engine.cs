@@ -187,58 +187,7 @@ namespace V8.Net
             _Initialize_Worker(); // (DO THIS LAST!!! - the worker expects everything to be ready)
         }
 
-        ~V8Engine()
-        {
-            Dispose();
-        }
-
-        public void Dispose()
-        {
-            if (NativeV8EngineProxy == null)
-                return;
-
-            _TerminateWorker(); // (will return only when it has successfully terminated)
-
-            // ... clear all handles of object IDs for disposal ...
-
-            foreach (var hProxy in HandleProxiesInternal)
-            {
-                if (hProxy != null && !hProxy->IsDisposed)
-                    hProxy->_ObjectID = -2; // (note: this must be <= -2, otherwise the ID auto updates -1 to -2 to flag the ID as already processed)
-            }
-
-            // ... allow all objects to be finalized by the GC ...
-
-            ObservableWeakReference<V8NativeObject> weakRef;
-
-            foreach (ObservableWeakReference<V8NativeObject> t in m_objects)
-                if ((weakRef = t) != null && weakRef.Object != null)
-                {
-                    weakRef.Object.IdInternal = null;
-                    weakRef.Object.Template = null;
-                    weakRef.Object.HandleInternal = ObjectHandle.Empty;
-                }
-
-            // ... destroy the native engine ...
-
-            if (NativeV8EngineProxy != null)
-            {
-                V8EnginesInternal[NativeV8EngineProxy->ID] = null; // (notifies any lingering handles that this engine is now gone)
-                V8NetProxy.DestroyV8EngineProxy(NativeV8EngineProxy);
-                NativeV8EngineProxy = null;
-            }
-        }
-
-        /// <summary>
-        /// Returns true once this engine has been disposed.
-        /// </summary>
-        public bool IsDisposed
-        {
-            get { return NativeV8EngineProxy == null; }
-        }
-
-        // --------------------------------------------------------------------------------------------------------------------
-
+        #region Public Methods
         /// <summary>
         /// Calling this method forces an "idle" loop in the native proxy until the V8 engine finishes pending work tasks.
         /// The work performed helps to reduce the memory footprint within the native V8 engine.
@@ -279,17 +228,14 @@ namespace V8.Net
             return V8NetProxy.DoIdleNotification(NativeV8EngineProxy, hint);
         }
 
-        bool _V8GarbageCollectionRequestCallback(HandleProxy* persistedObjectHandle)
+        /// <summary>
+        /// Sets the specified flags on the native V8 engine an example of a flag is --harmony
+        /// </summary>
+        /// <param name="flags"></param>
+        public void SetFlags(string flags)
         {
-            if (persistedObjectHandle->_ObjectID < 0)
-                return true;
-
-            // (the managed handle doesn't exist, so go ahead and dispose of the native one [the proxy handle])
-            var weakRef = _GetObjectWeakReference(persistedObjectHandle->_ObjectID);
-            return weakRef == null || weakRef.Object._OnNativeGCRequested();
+            V8NetProxy.SetFlags(NativeV8EngineProxy, flags);
         }
-
-        // --------------------------------------------------------------------------------------------------------------------
 
         /// <summary>
         /// Executes JavaScript on the V8 engine and returns the result.
@@ -526,8 +472,8 @@ namespace V8.Net
             }
             return result;
         }
-        // --------------------------------------------------------------------------------------------------------------------
 
+        #region Object Creation Methods
         /// <summary>
         /// Creates a new native V8 ObjectTemplate and associates it with a new managed ObjectTemplate.
         /// <para>Object templates are required in order to generate objects with property interceptors (that is, all property access is redirected to the managed side).</para>
@@ -561,8 +507,6 @@ namespace V8.Net
         /// <para>Object templates are required in order to generate objects with property interceptors (that is, all property access is redirected to the managed side).</para>
         /// </summary>
         public ObjectTemplate CreateObjectTemplate() { return CreateObjectTemplate<ObjectTemplate>(); }
-
-        // --------------------------------------------------------------------------------------------------------------------
 
         /// <summary>
         /// Creates a new native V8 FunctionTemplate and associates it with a new managed FunctionTemplate.
@@ -645,56 +589,6 @@ namespace V8.Net
         public InternalHandle CreateValue(DateTime date) { return CreateValue(date.ToUniversalTime().Subtract(Epoch)); }
 
         /// <summary>
-        /// Wraps a given object handle with a managed object, and optionally associates it with a template instance.
-        /// <para>Note: Any other managed object associated with the given handle will cause an error.
-        /// You should check '{Handle}.HasManagedObject', or use the "GetObject()" methods to make sure a managed object doesn't already exist.</para>
-        /// <para>This was method exists to support the following cases: 1. The V8 context auto-generates the global object, and
-        /// 2. V8 function objects are not generated from templates, but still need a managed wrapper.</para>
-        /// <para>Note: </para>
-        /// </summary>
-        /// <typeparam name="T">The wrapper type to create (such as V8ManagedObject).</typeparam>
-        /// <param name="v8Object">A handle to a native V8 object.</param>
-        /// <param name="initialize">If true (default) then then 'IV8NativeObject.Initialize()' is called on the created object before returning.</param>
-        internal T _CreateObject<T>(ITemplate template, InternalHandle v8Object)
-            where T : V8NativeObject, new()
-        {
-            return _CreateObject<T>(template, v8Object, true, true);
-        }
-
-        /// <summary>
-        /// Wraps a given object handle with a managed object, and optionally associates it with a template instance.
-        /// <para>Note: Any other managed object associated with the given handle will cause an error.
-        /// You should check '{Handle}.HasManagedObject', or use the "GetObject()" methods to make sure a managed object doesn't already exist.</para>
-        /// <para>This was method exists to support the following cases: 1. The V8 context auto-generates the global object, and
-        /// 2. V8 function objects are not generated from templates, but still need a managed wrapper.</para>
-        /// <para>Note: </para>
-        /// </summary>
-        /// <typeparam name="T">The wrapper type to create (such as V8ManagedObject).</typeparam>
-        /// <param name="v8Object">A handle to a native V8 object.</param>
-        /// <param name="initialize">If true (default) then then 'IV8NativeObject.Initialize()' is called on the created object before returning.</param>
-        internal T _CreateObject<T>(ITemplate template, InternalHandle v8Object, bool initialize, bool connectNativeObject)
-            where T : V8NativeObject, new()
-        {
-            try
-            {
-                if (!v8Object.IsObjectType)
-                    throw new InvalidOperationException("An object handle type is required (such as a JavaScript object or function handle).");
-
-                // ... create the new managed JavaScript object, store it (to get the "ID"), and connect it to the native V8 object ...
-                var obj = _CreateManagedObject<T>(template, v8Object.PassOn(), connectNativeObject);
-
-                if (initialize)
-                    obj.Initialize(false, null);
-
-                return obj;
-            }
-            finally
-            {
-                v8Object._DisposeIfFirst();
-            }
-        }
-
-        /// <summary>
         /// Wraps a given object handle with a managed object.
         /// <para>Note: Any other managed object associated with the given handle will cause an error.
         /// You should check '{Handle}.HasManagedObject', or use the "GetObject()" methods to make sure a managed object doesn't already exist.</para>
@@ -725,7 +619,7 @@ namespace V8.Net
         public T CreateObject<T>(InternalHandle v8Object, bool initialize)
             where T : V8NativeObject, new()
         {
-            return _CreateObject<T>(null, v8Object, initialize, true);
+            return CreateObjectInternal<T>(null, v8Object, initialize, true);
         }
 
         /// <summary>
@@ -994,9 +888,120 @@ namespace V8.Net
             //??var type = value != null ? value.GetType().Name : "null";
             //??throw new NotSupportedException("Cannot convert object of type '" + type + "' to a JavaScript value.");
         }
+        #endregion Object Creation Methods
 
-        // --------------------------------------------------------------------------------------------------------------------
+        #endregion Public Methods
+
+        /// <summary>
+        /// Wraps a given object handle with a managed object, and optionally associates it with a template instance.
+        /// <para>Note: Any other managed object associated with the given handle will cause an error.
+        /// You should check '{Handle}.HasManagedObject', or use the "GetObject()" methods to make sure a managed object doesn't already exist.</para>
+        /// <para>This was method exists to support the following cases: 1. The V8 context auto-generates the global object, and
+        /// 2. V8 function objects are not generated from templates, but still need a managed wrapper.</para>
+        /// <para>Note: </para>
+        /// </summary>
+        /// <typeparam name="T">The wrapper type to create (such as V8ManagedObject).</typeparam>
+        /// <param name="v8Object">A handle to a native V8 object.</param>
+        /// <param name="initialize">If true (default) then then 'IV8NativeObject.Initialize()' is called on the created object before returning.</param>
+        internal T CreateObjectInternal<T>(ITemplate template, InternalHandle v8Object)
+            where T : V8NativeObject, new()
+        {
+            return CreateObjectInternal<T>(template, v8Object, true, true);
+        }
+
+        /// <summary>
+        /// Wraps a given object handle with a managed object, and optionally associates it with a template instance.
+        /// <para>Note: Any other managed object associated with the given handle will cause an error.
+        /// You should check '{Handle}.HasManagedObject', or use the "GetObject()" methods to make sure a managed object doesn't already exist.</para>
+        /// <para>This was method exists to support the following cases: 1. The V8 context auto-generates the global object, and
+        /// 2. V8 function objects are not generated from templates, but still need a managed wrapper.</para>
+        /// <para>Note: </para>
+        /// </summary>
+        /// <typeparam name="T">The wrapper type to create (such as V8ManagedObject).</typeparam>
+        /// <param name="v8Object">A handle to a native V8 object.</param>
+        /// <param name="initialize">If true (default) then then 'IV8NativeObject.Initialize()' is called on the created object before returning.</param>
+        internal T CreateObjectInternal<T>(ITemplate template, InternalHandle v8Object, bool initialize, bool connectNativeObject)
+            where T : V8NativeObject, new()
+        {
+            try
+            {
+                if (!v8Object.IsObjectType)
+                    throw new InvalidOperationException("An object handle type is required (such as a JavaScript object or function handle).");
+
+                // ... create the new managed JavaScript object, store it (to get the "ID"), and connect it to the native V8 object ...
+                var obj = _CreateManagedObject<T>(template, v8Object.PassOn(), connectNativeObject);
+
+                if (initialize)
+                    obj.Initialize(false, null);
+
+                return obj;
+            }
+            finally
+            {
+                v8Object._DisposeIfFirst();
+            }
+        }
+
+        private bool _V8GarbageCollectionRequestCallback(HandleProxy* persistedObjectHandle)
+        {
+            if (persistedObjectHandle->_ObjectID < 0)
+                return true;
+
+            // (the managed handle doesn't exist, so go ahead and dispose of the native one [the proxy handle])
+            var weakRef = _GetObjectWeakReference(persistedObjectHandle->_ObjectID);
+            return weakRef == null || weakRef.Object._OnNativeGCRequested();
+        }
+
+        #region Dispose/Destroy
+        ~V8Engine()
+        {
+            Dispose();
+        }
+
+        public void Dispose()
+        {
+            if (NativeV8EngineProxy == null)
+                return;
+
+            _TerminateWorker(); // (will return only when it has successfully terminated)
+
+            // ... clear all handles of object IDs for disposal ...
+
+            foreach (var hProxy in HandleProxiesInternal)
+            {
+                if (hProxy != null && !hProxy->IsDisposed)
+                    hProxy->_ObjectID = -2; // (note: this must be <= -2, otherwise the ID auto updates -1 to -2 to flag the ID as already processed)
+            }
+
+            // ... allow all objects to be finalized by the GC ...
+
+            ObservableWeakReference<V8NativeObject> weakRef;
+
+            foreach (var t in m_objects)
+                if ((weakRef = t) != null && weakRef.Object != null)
+                {
+                    weakRef.Object.IdInternal = null;
+                    weakRef.Object.Template = null;
+                    weakRef.Object.HandleInternal = ObjectHandle.Empty;
+                }
+
+            // ... destroy the native engine ...
+
+            if (NativeV8EngineProxy == null)
+                return;
+
+            V8EnginesInternal[NativeV8EngineProxy->ID] = null; // (notifies any lingering handles that this engine is now gone)
+            V8NetProxy.DestroyV8EngineProxy(NativeV8EngineProxy);
+            NativeV8EngineProxy = null;
+        }
+
+        /// <summary>
+        /// Returns true once this engine has been disposed.
+        /// </summary>
+        public bool IsDisposed
+        {
+            get { return NativeV8EngineProxy == null; }
+        }
+        #endregion
     }
-
-    // ========================================================================================================================
 }

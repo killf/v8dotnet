@@ -52,6 +52,15 @@ extern "C"
 		END_ISOLATE_SCOPE;*///!
 	}
 
+	EXPORT void STDCALL SetFlags(V8EngineProxy *engine, uint16_t *flags)
+	{
+		BEGIN_ISOLATE_SCOPE(engine);
+		BEGIN_CONTEXT_SCOPE(engine);
+		engine->SetFlags(flags);
+		END_CONTEXT_SCOPE;
+		END_ISOLATE_SCOPE;
+	}
+
 	EXPORT HandleProxy* STDCALL V8Execute(V8EngineProxy *engine, uint16_t *script, uint16_t *sourceName)
 	{
 		BEGIN_ISOLATE_SCOPE(engine);
@@ -60,6 +69,7 @@ extern "C"
 		END_CONTEXT_SCOPE;
 		END_ISOLATE_SCOPE;
 	}
+
 	EXPORT HandleProxy* STDCALL V8Compile(V8EngineProxy *engine, uint16_t *script, uint16_t *sourceName)
 	{
 		BEGIN_ISOLATE_SCOPE(engine);
@@ -68,6 +78,7 @@ extern "C"
 		END_CONTEXT_SCOPE;
 		END_ISOLATE_SCOPE;
 	}
+
 	EXPORT HandleProxy* STDCALL V8ExecuteCompiledScript(V8EngineProxy *engine, HandleProxy* script)
 	{
 		BEGIN_ISOLATE_SCOPE(engine);

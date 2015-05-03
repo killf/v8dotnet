@@ -9,13 +9,13 @@ _StringItem::_StringItem(V8EngineProxy *engine, size_t length)
 {
 	Engine = engine;
 	Length = length;
-	String = (uint16_t*)ALLOC_MANAGED_MEM(sizeof(uint16_t) * (length + 1));
+	String = static_cast<uint16_t*>(ALLOC_MANAGED_MEM(sizeof(uint16_t) * (length + 1)));
 }
 _StringItem::_StringItem(V8EngineProxy *engine, v8::String* str)
 {
 	Engine = engine;
 	Length = str->Length();
-	String = (uint16_t*)ALLOC_MANAGED_MEM(sizeof(uint16_t) * (Length + 1));
+	String = static_cast<uint16_t*>(ALLOC_MANAGED_MEM(sizeof(uint16_t) * (Length + 1)));
 	str->Write(String);
 }
 
@@ -26,7 +26,7 @@ _StringItem _StringItem::ResizeIfNeeded(size_t newLength)
 	if (newLength > Length)
 	{
 		Length = newLength;
-		String = (uint16_t*)REALLOC_MANAGED_MEM(String, sizeof(uint16_t) * (Length + 1));
+		String = static_cast<uint16_t*>(REALLOC_MANAGED_MEM(String, sizeof(uint16_t) * (Length + 1)));
 	}
 	return *this;
 }
@@ -57,14 +57,17 @@ Handle<v8::Context> V8EngineProxy::Context() { return _Context; }
 // ------------------------------------------------------------------------------------------------------------------------
 
 V8EngineProxy::V8EngineProxy(bool enableDebugging, DebugMessageDispatcher* debugMessageDispatcher, int debugPort)
-	:ProxyBase(V8EngineProxyClass), _GlobalObjectTemplateProxy(nullptr),
-	_Strings(1000, _StringItem()), _Handles(1000, nullptr), _DisposedHandles(1000, -1), _NextNonTemplateObjectID(-2)
+	:ProxyBase(V8EngineProxyClass), _NextNonTemplateObjectID(-2),
+	_GlobalObjectTemplateProxy(nullptr), _Strings(1000, _StringItem()), _Handles(1000, nullptr), _DisposedHandles(1000, -1)
 {
+	//TODO: Reimplement debugging -- ClearScript seems to have a take on it.
+
 	if (!_V8Initialized) // (the API changed: https://groups.google.com/forum/#!topic/v8-users/wjMwflJkfso)
 	{
-		v8::V8::InitializePlatform(v8::platform::CreateDefaultPlatform());
-		v8::V8::InitializeICU();
-		v8::V8::Initialize();
+		V8::InitializePlatform(platform::CreateDefaultPlatform());
+		V8::InitializeICU();
+		V8::Initialize();
+		
 		_V8Initialized = true;
 	}
 
@@ -80,7 +83,7 @@ V8EngineProxy::V8EngineProxy(bool enableDebugging, DebugMessageDispatcher* debug
 
 	_Isolate->SetData(0, this); // (sets a reference in the isolate to the proxy [useful within callbacks])
 
-	if ((vector<bool>::size_type)_NextEngineID >= _DisposedEngines.capacity())
+	if (static_cast<vector<bool>::size_type>(_NextEngineID) >= _DisposedEngines.capacity())
 		_DisposedEngines.resize(_DisposedEngines.capacity() + 32);
 
 	if (_NextEngineID == 0)
@@ -170,7 +173,6 @@ void V8EngineProxy::DisposeNativeString(_StringItem &item)
 	_Strings.push_back(item);
 }
 
-// ------------------------------------------------------------------------------------------------------------------------
 /*
  * Returns a proxy wrapper for the given handle to allow access via the managed side.
  */
@@ -189,7 +191,7 @@ HandleProxy* V8EngineProxy::GetHandleProxy(Handle<Value> handle)
 	}
 	else
 	{
-		handleProxy = (new HandleProxy(this, (int32_t)_Handles.size()))->Initialize(handle);
+		handleProxy = (new HandleProxy(this, static_cast<int32_t>(_Handles.size())))->Initialize(handle);
 		_Handles.push_back(handleProxy); // (keep a record of all handles created)
 
 		//_Isolate->IdleNotification(100); // (handles should not have to be created all the time, so this helps to free them up)
@@ -246,11 +248,23 @@ HandleProxy* V8EngineProxy::SetGlobalObjectTemplate(ObjectTemplateProxy* proxy)
 
 	auto globalObject = context->Global()->GetPrototype()->ToObject();
 	globalObject->SetAlignedPointerInInternalField(0, _GlobalObjectTemplateProxy); // (proxy object reference)
-	globalObject->SetInternalField(1, External::New(_Isolate, (void*)-1)); // (manage object ID, which is only applicable when tracking many created objects [and not a single engine or global scope])
+	globalObject->SetInternalField(1, External::New(_Isolate, reinterpret_cast<void*>(-1))); // (manage object ID, which is only applicable when tracking many created objects [and not a single engine or global scope])
 
 	_GlobalObject = globalObject; // (keep a reference to the global object for faster reference)
 
 	return GetHandleProxy(globalObject); // (the native side will own this, and is responsible to free it when done)
+}
+
+void V8EngineProxy::SetFlags(const uint16_t* flags)
+{
+	if (flags == nullptr)
+		return;
+
+	auto hFlags = NewUString(flags);
+	auto buf = new char[hFlags->Utf8Length()];
+	hFlags->WriteUtf8(buf);
+
+	V8::SetFlagsFromString(buf, strlen(buf));
 }
 
 // ------------------------------------------------------------------------------------------------------------------------
@@ -303,7 +317,7 @@ Local<String> V8EngineProxy::GetErrorMessage(TryCatch &tryCatch)
 
 		if (stackStr->Length() >= msg->Length())
 		{
-			uint16_t* ss = new uint16_t[stackStr->Length() + 1];
+			auto ss = new uint16_t[stackStr->Length() + 1];
 			stack->ToString()->Write(ss);
 			auto subStackStr = NewSizedUString(ss, msg->Length());
 			auto stackPartStr = NewSizedUString(ss + msg->Length(), stackStr->Length() - msg->Length());
@@ -345,7 +359,8 @@ HandleProxy* V8EngineProxy::Execute(const uint16_t* script, uint16_t* sourceName
 		TryCatch __tryCatch;
 		//__tryCatch.SetVerbose(true);
 
-		if (sourceName == nullptr) sourceName = (uint16_t*)L"";
+		if (sourceName == nullptr)
+			sourceName = (uint16_t*)L"";
 
 		auto compiledScript = Script::Compile(NewUString(script), NewUString(sourceName));
 
@@ -402,7 +417,8 @@ HandleProxy* V8EngineProxy::Compile(const uint16_t* script, uint16_t* sourceName
 		TryCatch __tryCatch;
 		//__tryCatch.SetVerbose(true);
 
-		if (sourceName == nullptr) sourceName = (uint16_t*)L"";
+		if (sourceName == nullptr)
+			sourceName = (uint16_t*)L"";
 
 		auto hScript = NewUString(script);
 
@@ -465,7 +481,7 @@ HandleProxy* V8EngineProxy::Call(HandleProxy *subject, const uint16_t *functionN
 
 	if (argCount > 0)
 	{
-		Handle<Value>* _args = new Handle<Value>[argCount];
+		auto _args = new Handle<Value>[argCount];
 		for (auto i = 0; i < argCount; i++)
 			_args[i] = args[i]->Handle();
 		result = hFunc->Call(hThis.As<Object>(), argCount, _args);
@@ -509,38 +525,42 @@ HandleProxy* V8EngineProxy::CreateString(const uint16_t* str)
 
 HandleProxy* V8EngineProxy::CreateError(const uint16_t* message, JSValueType errorType)
 {
-	if (errorType >= 0) throw exception("Invalid error type.");
+	if (errorType >= 0)
+		throw exception("Invalid error type.");
+
 	auto h = GetHandleProxy(NewUString(message));
 	h->_Type = errorType;
 	return h;
 }
+
 HandleProxy* V8EngineProxy::CreateError(const char* message, JSValueType errorType)
 {
-	if (errorType >= 0) throw exception("Invalid error type.");
+	if (errorType >= 0)
+		throw exception("Invalid error type.");
+
 	auto h = GetHandleProxy(NewString(message));
 	h->_Type = errorType;
 	return h;
 }
-
 
 HandleProxy* V8EngineProxy::CreateDate(double ms)
 {
 	return GetHandleProxy(NewDate(ms));
 }
 
-HandleProxy* V8EngineProxy::CreateObject(int32_t managedObjectID)
+HandleProxy* V8EngineProxy::CreateObject(int32_t managedObjectId)
 {
-	if (managedObjectID == -1)
-		managedObjectID = GetNextNonTemplateObjectID();
+	if (managedObjectId == -1)
+		managedObjectId = GetNextNonTemplateObjectID();
 
 	auto handle = GetHandleProxy(NewObject());
-	ConnectObject(handle, managedObjectID, nullptr);
+	ConnectObject(handle, managedObjectId, nullptr);
 	return handle;
 }
 
 HandleProxy* V8EngineProxy::CreateArray(HandleProxy** items, uint16_t length)
 {
-	Local<Array> array = NewArray(length);
+	auto array = NewArray(length);
 
 	if (items != nullptr && length > 0)
 		for (auto i = 0; i < length; i++)
@@ -551,7 +571,7 @@ HandleProxy* V8EngineProxy::CreateArray(HandleProxy** items, uint16_t length)
 
 HandleProxy* V8EngineProxy::CreateArray(uint16_t** items, uint16_t length)
 {
-	Local<Array> array = NewArray(length);
+	auto array = NewArray(length);
 
 	if (items != nullptr && length > 0)
 		for (auto i = 0; i < length; i++)

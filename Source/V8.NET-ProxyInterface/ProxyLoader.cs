@@ -88,6 +88,15 @@
 #else
         [DllImport("V8_Net_Proxy", CharSet = CharSet.Unicode)]
 #endif
+        public static extern void SetFlags(NativeV8EngineProxy* engine, string flags);
+
+#if x86
+        [DllImport("V8_Net_Proxy_x86", CharSet = CharSet.Unicode)]
+#elif x64
+        [DllImport("V8_Net_Proxy_x64", CharSet = CharSet.Unicode)]
+#else
+        [DllImport("V8_Net_Proxy", CharSet = CharSet.Unicode)]
+#endif
         public static extern HandleProxy* V8Execute(NativeV8EngineProxy* engine, string script, string sourceName = null);
 
 #if x86
@@ -117,7 +126,7 @@
 #else
         [DllImport("V8_Net_Proxy")]
 #endif
-        public static unsafe extern NativeObjectTemplateProxy* CreateObjectTemplateProxy(NativeV8EngineProxy* engine);
+        public static extern NativeObjectTemplateProxy* CreateObjectTemplateProxy(NativeV8EngineProxy* engine);
         // Return: NativeObjectTemplateProxy*
 
 #if x86
@@ -127,7 +136,7 @@
 #else
         [DllImport("V8_Net_Proxy")]
 #endif
-        public static extern unsafe void DeleteObjectTemplateProxy(NativeObjectTemplateProxy* objectTemplateProxy);
+        public static extern void DeleteObjectTemplateProxy(NativeObjectTemplateProxy* objectTemplateProxy);
 
 #if x86
         [DllImport("V8_Net_Proxy_x86")]
@@ -136,7 +145,7 @@
 #else
         [DllImport("V8_Net_Proxy")]
 #endif
-        public static unsafe extern HandleProxy* SetGlobalObjectTemplate(NativeV8EngineProxy* engine, NativeObjectTemplateProxy* proxy);
+        public static extern HandleProxy* SetGlobalObjectTemplate(NativeV8EngineProxy* engine, NativeObjectTemplateProxy* proxy);
         // Return: HandleProxy*
         // (Note: returns a handle to the global object created by the context when the object template was set)
 
@@ -202,7 +211,7 @@
 #else
         [DllImport("V8_Net_Proxy")]
 #endif
-        public static unsafe extern HandleProxy* CreateObjectFromTemplate(NativeObjectTemplateProxy* objectTemplateProxy, Int32 objID);
+        public static extern HandleProxy* CreateObjectFromTemplate(NativeObjectTemplateProxy* objectTemplateProxy, Int32 objId);
         // Return: HandleProxy*
 
 #if x86
@@ -213,9 +222,9 @@
         [DllImport("V8_Net_Proxy")]
 #endif
 #if V1_1 || V2 || V3 || V3_5
-        public static unsafe extern void ConnectObject(HandleProxy* handleProxy, Int32 objID, void* templateProxy);
+        public static extern void ConnectObject(HandleProxy* handleProxy, Int32 objId, void* templateProxy);
 #else
-        public static unsafe extern void ConnectObject(HandleProxy* handleProxy, Int32 objID, void* templateProxy = null);
+        public static extern void ConnectObject(HandleProxy* handleProxy, Int32 objId, void* templateProxy = null);
 #endif
 
 #if x86
@@ -225,7 +234,7 @@
 #else
         [DllImport("V8_Net_Proxy")]
 #endif
-        public static unsafe extern HandleProxy* GetObjectPrototype(HandleProxy* handleProxy);
+        public static extern HandleProxy* GetObjectPrototype(HandleProxy* handleProxy);
         // Return: HandleProxy*
 
 #if x86
@@ -235,11 +244,7 @@
 #else
         [DllImport("V8_Net_Proxy", CharSet = CharSet.Unicode)]
 #endif
-        /// <summary>
-        /// Calls a property with a given name on a specified object as a function and returns the result.
-        /// If the function name is null, then the subject is assumed to be a function object.
-        /// </summary>
-        public static unsafe extern HandleProxy* Call(HandleProxy* subject, string functionName, HandleProxy* _this, Int32 argCount, HandleProxy** args);
+        public static extern HandleProxy* Call(HandleProxy* subject, string functionName, HandleProxy* _this, Int32 argCount, HandleProxy** args);
         // Return: HandleProxy*
 
         //  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 
@@ -252,9 +257,9 @@
         [DllImport("V8_Net_Proxy", CharSet = CharSet.Unicode)]
 #endif
 #if V1_1 || V2 || V3 || V3_5
-        public static unsafe extern bool SetObjectPropertyByName(HandleProxy* proxy, string name, HandleProxy* value, V8PropertyAttributes attributes);
+        public static extern bool SetObjectPropertyByName(HandleProxy* proxy, string name, HandleProxy* value, V8PropertyAttributes attributes);
 #else
-        public static unsafe extern bool SetObjectPropertyByName(HandleProxy* proxy, string name, HandleProxy* value, V8PropertyAttributes attributes = V8PropertyAttributes.None);
+        public static extern bool SetObjectPropertyByName(HandleProxy* proxy, string name, HandleProxy* value, V8PropertyAttributes attributes = V8PropertyAttributes.None);
 #endif
 
 #if x86
@@ -264,7 +269,7 @@
 #else
         [DllImport("V8_Net_Proxy")]
 #endif
-        public static unsafe extern bool SetObjectPropertyByIndex(HandleProxy* proxy, Int32 index, HandleProxy* value);
+        public static extern bool SetObjectPropertyByIndex(HandleProxy* proxy, Int32 index, HandleProxy* value);
 
 #if x86
         [DllImport("V8_Net_Proxy_x86", CharSet = CharSet.Unicode)]
@@ -273,7 +278,7 @@
 #else
         [DllImport("V8_Net_Proxy", CharSet = CharSet.Unicode)]
 #endif
-        public static unsafe extern HandleProxy* GetObjectPropertyByName(HandleProxy* proxy, string name);
+        public static extern HandleProxy* GetObjectPropertyByName(HandleProxy* proxy, string name);
         // Return: HandleProxy*
 
 #if x86
@@ -283,7 +288,7 @@
 #else
         [DllImport("V8_Net_Proxy")]
 #endif
-        public static unsafe extern HandleProxy* GetObjectPropertyByIndex(HandleProxy* proxy, Int32 index);
+        public static extern HandleProxy* GetObjectPropertyByIndex(HandleProxy* proxy, Int32 index);
         // Return: HandleProxy*
 
 #if x86
@@ -293,7 +298,7 @@
 #else
         [DllImport("V8_Net_Proxy", CharSet = CharSet.Unicode)]
 #endif
-        public static unsafe extern bool DeleteObjectPropertyByName(HandleProxy* proxy, string name);
+        public static extern bool DeleteObjectPropertyByName(HandleProxy* proxy, string name);
 
 #if x86
         [DllImport("V8_Net_Proxy_x86")]
@@ -302,7 +307,7 @@
 #else
         [DllImport("V8_Net_Proxy")]
 #endif
-        public static unsafe extern bool DeleteObjectPropertyByIndex(HandleProxy* proxy, Int32 index);
+        public static extern bool DeleteObjectPropertyByIndex(HandleProxy* proxy, Int32 index);
 
 #if x86
         [DllImport("V8_Net_Proxy_x86", CharSet = CharSet.Unicode)]
@@ -311,7 +316,7 @@
 #else
         [DllImport("V8_Net_Proxy", CharSet = CharSet.Unicode)]
 #endif
-        public static unsafe extern void SetObjectAccessor(HandleProxy* proxy, Int32 managedObjectID, string name,
+        public static extern void SetObjectAccessor(HandleProxy* proxy, Int32 managedObjectId, string name,
             ManagedAccessorGetter getter, ManagedAccessorSetter setter,
             V8AccessControl access, V8PropertyAttributes attributes);
 
@@ -322,7 +327,7 @@
 #else
         [DllImport("V8_Net_Proxy", CharSet = CharSet.Unicode)]
 #endif
-        public static unsafe extern void SetObjectTemplateAccessor(NativeObjectTemplateProxy* proxy, Int32 managedObjectID, string name,
+        public static extern void SetObjectTemplateAccessor(NativeObjectTemplateProxy* proxy, Int32 managedObjectId, string name,
             ManagedAccessorGetter getter, ManagedAccessorSetter setter,
             V8AccessControl access, V8PropertyAttributes attributes);
 
@@ -333,7 +338,7 @@
 #else
         [DllImport("V8_Net_Proxy", CharSet = CharSet.Unicode)]
 #endif
-        public static unsafe extern void SetObjectTemplateProperty(NativeObjectTemplateProxy* proxy, string name, HandleProxy* value, V8PropertyAttributes attributes = V8PropertyAttributes.None);
+        public static extern void SetObjectTemplateProperty(NativeObjectTemplateProxy* proxy, string name, HandleProxy* value, V8PropertyAttributes attributes = V8PropertyAttributes.None);
 
 #if x86
         [DllImport("V8_Net_Proxy_x86")]
@@ -342,7 +347,7 @@
 #else
         [DllImport("V8_Net_Proxy")]
 #endif
-        public static unsafe extern HandleProxy* GetPropertyNames(HandleProxy* proxy);
+        public static extern HandleProxy* GetPropertyNames(HandleProxy* proxy);
         // Return: HandleProxy*
 
 #if x86
@@ -352,7 +357,7 @@
 #else
         [DllImport("V8_Net_Proxy")]
 #endif
-        public static unsafe extern HandleProxy* GetOwnPropertyNames(HandleProxy* proxy);
+        public static extern HandleProxy* GetOwnPropertyNames(HandleProxy* proxy);
         // Return: HandleProxy*
 
 #if x86
@@ -362,7 +367,7 @@
 #else
         [DllImport("V8_Net_Proxy", CharSet = CharSet.Unicode)]
 #endif
-        public static unsafe extern V8PropertyAttributes GetPropertyAttributes(HandleProxy* proxy, string name);
+        public static extern V8PropertyAttributes GetPropertyAttributes(HandleProxy* proxy, string name);
 
 #if x86
         [DllImport("V8_Net_Proxy_x86")]
@@ -371,7 +376,7 @@
 #else
         [DllImport("V8_Net_Proxy")]
 #endif
-        public static unsafe extern Int32 GetArrayLength(HandleProxy* proxy);
+        public static extern Int32 GetArrayLength(HandleProxy* proxy);
 
         //  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 
 
@@ -382,7 +387,7 @@
 #else
         [DllImport("V8_Net_Proxy", CharSet = CharSet.Unicode)]
 #endif
-        public static unsafe extern NativeFunctionTemplateProxy* CreateFunctionTemplateProxy(NativeV8EngineProxy* engine, string className, ManagedJSFunctionCallback callback);
+        public static extern NativeFunctionTemplateProxy* CreateFunctionTemplateProxy(NativeV8EngineProxy* engine, string className, ManagedJSFunctionCallback callback);
         // Return: NativeFunctionTemplateProxy*
 
 #if x86
@@ -392,7 +397,7 @@
 #else
         [DllImport("V8_Net_Proxy")]
 #endif
-        public static extern unsafe void DeleteFunctionTemplateProxy(NativeFunctionTemplateProxy* functionTemplateProxy);
+        public static extern void DeleteFunctionTemplateProxy(NativeFunctionTemplateProxy* functionTemplateProxy);
 
 #if x86
         [DllImport("V8_Net_Proxy_x86")]
@@ -401,7 +406,7 @@
 #else
         [DllImport("V8_Net_Proxy")]
 #endif
-        public static unsafe extern NativeObjectTemplateProxy* GetFunctionInstanceTemplateProxy(NativeFunctionTemplateProxy* functionTemplateProxy);
+        public static extern NativeObjectTemplateProxy* GetFunctionInstanceTemplateProxy(NativeFunctionTemplateProxy* functionTemplateProxy);
         // Return: NativeObjectTemplateProxy*
 
 #if x86
@@ -411,7 +416,7 @@
 #else
         [DllImport("V8_Net_Proxy")]
 #endif
-        public static unsafe extern void* GetFunctionPrototypeTemplateProxy(NativeFunctionTemplateProxy* functionTemplateProxy);
+        public static extern void* GetFunctionPrototypeTemplateProxy(NativeFunctionTemplateProxy* functionTemplateProxy);
         // Return: NativeObjectTemplateProxy*
 
 #if x86
@@ -421,7 +426,7 @@
 #else
         [DllImport("V8_Net_Proxy")]
 #endif
-        public static unsafe extern HandleProxy* GetFunction(NativeFunctionTemplateProxy* functionTemplateProxy);
+        public static extern HandleProxy* GetFunction(NativeFunctionTemplateProxy* functionTemplateProxy);
         // Return: HandleProxy*
 
 #if x86
@@ -432,9 +437,9 @@
         [DllImport("V8_Net_Proxy")]
 #endif
 #if V1_1 || V2 || V3 || V3_5
-        public static unsafe extern HandleProxy* CreateFunctionInstance(NativeFunctionTemplateProxy* functionTemplateProxy, Int32 objID, Int32 argCount, HandleProxy** args);
+        public static extern HandleProxy* CreateFunctionInstance(NativeFunctionTemplateProxy* functionTemplateProxy, Int32 objId, Int32 argCount, HandleProxy** args);
 #else
-        public static unsafe extern HandleProxy* CreateFunctionInstance(NativeFunctionTemplateProxy* functionTemplateProxy, Int32 objID, Int32 argCount = 0, HandleProxy** args = null);
+        public static extern HandleProxy* CreateFunctionInstance(NativeFunctionTemplateProxy* functionTemplateProxy, Int32 objId, Int32 argCount = 0, HandleProxy** args = null);
         // Return: HandleProxy*
 #endif
 
@@ -445,7 +450,7 @@
 #else
         [DllImport("V8_Net_Proxy", CharSet = CharSet.Unicode)]
 #endif
-        public static unsafe extern void SetFunctionTemplateProperty(NativeFunctionTemplateProxy* proxy, string name, HandleProxy* value, V8PropertyAttributes attributes = V8PropertyAttributes.None);
+        public static extern void SetFunctionTemplateProperty(NativeFunctionTemplateProxy* proxy, string name, HandleProxy* value, V8PropertyAttributes attributes = V8PropertyAttributes.None);
 
 
         //  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 
@@ -517,7 +522,7 @@
 #else
         [DllImport("V8_Net_Proxy")]
 #endif
-        public static extern HandleProxy* CreateObject(NativeV8EngineProxy* engine, Int32 managedObjectID);
+        public static extern HandleProxy* CreateObject(NativeV8EngineProxy* engine, Int32 managedObjectId);
 
 #if x86
         [DllImport("V8_Net_Proxy_x86")]

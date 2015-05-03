@@ -119,7 +119,7 @@ void ObjectTemplateProxy::GetProperty(Local<String> hName, const PropertyCallbac
 
             if (proxy != nullptr && proxy->_EngineProxy != nullptr && proxy->Type == ObjectTemplateProxyClass)
             {
-                auto managedObjectID = (int32_t)obj->GetInternalField(1).As<External>()->Value();
+                auto managedObjectID = reinterpret_cast<int32_t>(obj->GetInternalField(1).As<External>()->Value());
                 ManagedAccessorInfo maInfo(proxy, managedObjectID, info);
                 auto str = proxy->_EngineProxy->GetNativeString(*hName); // TODO: This can be faster - no need to allocate every time!
                 auto result = proxy->NamedPropertyGetter(str.String, maInfo); // (assumes the 'str' memory will be released by the managed side)
@@ -150,7 +150,7 @@ void ObjectTemplateProxy::SetProperty(Local<String> hName, Local<Value> value, c
 
             if (proxy != nullptr && proxy->Type == ObjectTemplateProxyClass)
             {
-                auto managedObjectID = (int32_t)obj->GetInternalField(1).As<External>()->Value();
+                auto managedObjectID = reinterpret_cast<int32_t>(obj->GetInternalField(1).As<External>()->Value());
                 ManagedAccessorInfo maInfo(proxy, managedObjectID, info);
                 auto str = proxy->_EngineProxy->GetNativeString(*hName);
                 HandleProxy *val = proxy->_EngineProxy->GetHandleProxy(value);
@@ -182,7 +182,7 @@ void ObjectTemplateProxy::GetPropertyAttributes(Local<String> hName, const Prope
 
             if (proxy != nullptr && proxy->Type == ObjectTemplateProxyClass)
             {
-                auto managedObjectID = (int32_t)obj->GetInternalField(1).As<External>()->Value();
+                auto managedObjectID = reinterpret_cast<int32_t>(obj->GetInternalField(1).As<External>()->Value());
                 ManagedAccessorInfo maInfo(proxy, managedObjectID, info);
                 auto str = proxy->_EngineProxy->GetNativeString(*hName);
                 int result = proxy->NamedPropertyQuery(str.String, maInfo); // (assumes the 'str' memory will be released by the managed side)
@@ -209,7 +209,7 @@ void ObjectTemplateProxy::DeleteProperty(Local<String> hName, const PropertyCall
 
             if (proxy != nullptr && proxy->Type == ObjectTemplateProxyClass)
             {
-                auto managedObjectID = (int32_t)obj->GetInternalField(1).As<External>()->Value();
+                auto managedObjectID = reinterpret_cast<int32_t>(obj->GetInternalField(1).As<External>()->Value());
                 ManagedAccessorInfo maInfo(proxy, managedObjectID, info);
                 auto str = proxy->_EngineProxy->GetNativeString(*hName);
                 int result = proxy->NamedPropertyDeleter(str.String, maInfo); // (assumes the 'str' memory will be released by the managed side)
@@ -239,7 +239,7 @@ void ObjectTemplateProxy::GetPropertyNames(const PropertyCallbackInfo<Array>& in
 
             if (proxy != nullptr && proxy->Type == ObjectTemplateProxyClass)
             {
-                auto managedObjectID = (int32_t)obj->GetInternalField(1).As<External>()->Value();
+                auto managedObjectID = reinterpret_cast<int32_t>(obj->GetInternalField(1).As<External>()->Value());
                 ManagedAccessorInfo maInfo(proxy, managedObjectID, info);
                 auto result = proxy->NamedPropertyEnumerator(maInfo); // (assumes the 'str' memory will be released by the managed side)
                 if (result != nullptr) 
@@ -272,7 +272,7 @@ void ObjectTemplateProxy::GetProperty(uint32_t index, const PropertyCallbackInfo
 
             if (proxy != nullptr && proxy->Type == ObjectTemplateProxyClass)
             {
-                auto managedObjectID = (int32_t)obj->GetInternalField(1).As<External>()->Value();
+                auto managedObjectID = reinterpret_cast<int32_t>(obj->GetInternalField(1).As<External>()->Value());
                 ManagedAccessorInfo maInfo(proxy, managedObjectID, info);
                 auto result = proxy->IndexedPropertyGetter(index, maInfo); // (assumes the 'str' memory will be released by the managed side)
                 if (result != nullptr) 
@@ -301,7 +301,7 @@ void ObjectTemplateProxy::SetProperty(uint32_t index, Local<Value> value, const 
 
             if (proxy != nullptr && proxy->Type == ObjectTemplateProxyClass)
             {
-                auto managedObjectID = (int32_t)obj->GetInternalField(1).As<External>()->Value();
+                auto managedObjectID = reinterpret_cast<int32_t>(obj->GetInternalField(1).As<External>()->Value());
                 ManagedAccessorInfo maInfo(proxy, managedObjectID, info);
                 HandleProxy *val = proxy->_EngineProxy->GetHandleProxy(value);
                 auto result = proxy->IndexedPropertySetter(index, val, maInfo); // (assumes the 'str' memory will be released by the managed side)
@@ -331,7 +331,7 @@ void ObjectTemplateProxy::GetPropertyAttributes(uint32_t index, const PropertyCa
 
             if (proxy != nullptr && proxy->Type == ObjectTemplateProxyClass)
             {
-                auto managedObjectID = (int32_t)obj->GetInternalField(1).As<External>()->Value();
+                auto managedObjectID = reinterpret_cast<int32_t>(obj->GetInternalField(1).As<External>()->Value());
                 ManagedAccessorInfo maInfo(proxy, managedObjectID, info);
                 int result = proxy->IndexedPropertyQuery(index, maInfo); // (assumes the 'str' memory will be released by the managed side)
                 if (result >= 0)
@@ -356,7 +356,7 @@ void ObjectTemplateProxy::DeleteProperty(uint32_t index, const PropertyCallbackI
 
             if (proxy != nullptr && proxy->Type == ObjectTemplateProxyClass)
             {
-                auto managedObjectID = (int32_t)obj->GetInternalField(1).As<External>()->Value();
+                auto managedObjectID = reinterpret_cast<int32_t>(obj->GetInternalField(1).As<External>()->Value());
                 ManagedAccessorInfo maInfo(proxy, managedObjectID, info);
                 int result = proxy->IndexedPropertyDeleter(index, maInfo); // (assumes the 'str' memory will be released by the managed side)
 
@@ -384,7 +384,7 @@ void ObjectTemplateProxy::GetPropertyIndices(const PropertyCallbackInfo<Array>& 
 
             if (proxy != nullptr && proxy->Type == ObjectTemplateProxyClass)
             {
-                auto managedObjectID = (int32_t)obj->GetInternalField(1).As<External>()->Value();
+                auto managedObjectID = reinterpret_cast<int32_t>(obj->GetInternalField(1).As<External>()->Value());
                 ManagedAccessorInfo maInfo(proxy, managedObjectID, info);
                 auto result = proxy->IndexedPropertyEnumerator(maInfo); // (assumes the 'str' memory will be released by the managed side)
                 if (result != nullptr) 
@@ -428,7 +428,7 @@ void ObjectTemplateProxy::AccessorGetterCallbackProxy(Local<String> property, co
         if (hAccessors->Length() == 3)
         {
             auto hID= hAccessors->Get(0).As<Integer>(); // ManagedObjectID
-            auto managedObjectID = (int32_t)hID->Int32Value();
+            auto managedObjectID = static_cast<int32_t>(hID->Int32Value());
             //??if (managedObjectID < 0 && obj->InternalFieldCount() >= 2) // (if the object ID is < 0 [usually -1] then try to detect the ID in other ways)
             //    auto managedObjectID = (int32_t)obj->GetInternalField(1).As<External>()->Value(); // (for ObjectTemplate objects)
             //else
@@ -438,8 +438,8 @@ void ObjectTemplateProxy::AccessorGetterCallbackProxy(Local<String> property, co
             //        managedObjectID = (int32_t)hHiddenObjID->Int32Value();
             //}
 
-            auto engine = (V8EngineProxy*)info.GetIsolate()->GetData(0);
-            ManagedAccessorGetter getter = (ManagedAccessorGetter)hAccessors->Get(1).As<External>()->Value();
+            auto engine = static_cast<V8EngineProxy*>(info.GetIsolate()->GetData(0));
+            auto getter = static_cast<ManagedAccessorGetter>(hAccessors->Get(1).As<External>()->Value());
 
             if (getter != nullptr)
             {
@@ -481,7 +481,7 @@ void ObjectTemplateProxy::AccessorSetterCallbackProxy(Local<String> property, Lo
         if (hAccessors->Length() == 3)
         {
             auto hID= hAccessors->Get(0).As<Integer>(); // ManagedObjectID
-            auto managedObjectID = (int32_t)hID->Int32Value();
+            auto managedObjectID = static_cast<int32_t>(hID->Int32Value());
             //??if (managedObjectID < 0 && obj->InternalFieldCount() >= 2) // (if the object ID is < 0 [usually -1] then try to detect the ID in other ways)
             //    auto managedObjectID = (int32_t)obj->GetInternalField(1).As<External>()->Value(); // (for ObjectTemplate objects)
             //else
@@ -491,8 +491,8 @@ void ObjectTemplateProxy::AccessorSetterCallbackProxy(Local<String> property, Lo
             //        managedObjectID = (int32_t)hHiddenObjID->Int32Value();
             //}
 
-            auto engine = (V8EngineProxy*)info.GetIsolate()->GetData(0);
-            ManagedAccessorSetter setter = (ManagedAccessorSetter)hAccessors->Get(2).As<External>()->Value();
+            auto engine = static_cast<V8EngineProxy*>(info.GetIsolate()->GetData(0));
+            auto setter = static_cast<ManagedAccessorSetter>(hAccessors->Get(2).As<External>()->Value());
 
             if (setter != nullptr)
             {

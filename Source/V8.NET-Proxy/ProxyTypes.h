@@ -655,7 +655,7 @@ public:
 
     void  RegisterGCCallback(ManagedV8GarbageCollectionRequestCallback managedV8GarbageCollectionRequestCallback);
 
-    static bool IsDisposed(int32_t engineID);
+    static bool IsDisposed(int32_t engineId);
 
     void WithIsolateScope(CallbackAction action); //?
     void WithContextScope(CallbackAction action); //?
@@ -663,8 +663,8 @@ public:
 
     ObjectTemplateProxy* CreateObjectTemplate();
     HandleProxy* SetGlobalObjectTemplate(ObjectTemplateProxy* proxy);
-
-    FunctionTemplateProxy* CreateFunctionTemplate(uint16_t *className, ManagedJSFunctionCallback callback);
+	void SetFlags(const uint16_t* flags);
+	FunctionTemplateProxy* CreateFunctionTemplate(uint16_t *className, ManagedJSFunctionCallback callback);
 
     HandleProxy* Execute(const uint16_t* script, uint16_t* sourceName);
     HandleProxy* Execute(Handle<Script> script);
@@ -681,7 +681,7 @@ public:
     HandleProxy* CreateDate(double ms);
     HandleProxy* CreateArray(HandleProxy** items, uint16_t length);
     HandleProxy* CreateArray(uint16_t** items, uint16_t length);
-    HandleProxy* CreateObject(int32_t managedObjectID);
+    HandleProxy* CreateObject(int32_t managedObjectId);
     HandleProxy* CreateNullValue();
 
     friend HandleProxy;

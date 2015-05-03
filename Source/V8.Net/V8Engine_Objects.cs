@@ -247,7 +247,7 @@
                 if (obj == null && createIfNotFound)
                 {
                     handle.ObjectId = -1; // (managed object doesn't exist [perhaps GC'd], so reset the ID)
-                    obj = _CreateObject<T>(template, handle.PassOn(), initializeOnCreate, connectNativeObject);
+                    obj = CreateObjectInternal<T>(template, handle.PassOn(), initializeOnCreate, connectNativeObject);
                 }
             }
             finally

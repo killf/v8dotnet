@@ -47,20 +47,20 @@ void FunctionTemplateProxy::SetManagedCallback(ManagedJSFunctionCallback managed
 
 void FunctionTemplateProxy::InvocationCallbackProxy(const FunctionCallbackInfo<Value>& args)
 {
-    auto proxy = (ProxyBase*)args.Data().As<External>()->Value();
+    auto proxy = static_cast<ProxyBase*>(args.Data().As<External>()->Value());
 
     V8EngineProxy *engine;
     ManagedJSFunctionCallback callback;
 
     if (proxy->GetType() == FunctionTemplateProxyClass)
     {
-        engine = ((FunctionTemplateProxy*)proxy)->_EngineProxy;
-        callback = ((FunctionTemplateProxy*)proxy)->_ManagedCallback;
+        engine = static_cast<FunctionTemplateProxy*>(proxy)->_EngineProxy;
+        callback = static_cast<FunctionTemplateProxy*>(proxy)->_ManagedCallback;
     }
     else if (proxy->GetType() == ObjectTemplateProxyClass)
     {
-        engine = ((ObjectTemplateProxy*)proxy)->_EngineProxy;
-        callback = ((ObjectTemplateProxy*)proxy)->_ManagedCallback;
+        engine = static_cast<ObjectTemplateProxy*>(proxy)->_EngineProxy;
+        callback = static_cast<ObjectTemplateProxy*>(proxy)->_ManagedCallback;
     }
     else throw exception("'args.Data()' is not recognized.");
 
@@ -113,8 +113,8 @@ HandleProxy* FunctionTemplateProxy::GetFunction()
 
 HandleProxy* FunctionTemplateProxy::CreateInstance(int32_t managedObjectID, int32_t argCount, HandleProxy** args)
 {
-    Handle<Value>* hArgs = new Handle<Value>[argCount];
-    for (int i = 0; i < argCount; i++)
+	auto hArgs = new Handle<Value>[argCount];
+    for (auto i = 0; i < argCount; i++)
         hArgs[i] = args[i]->Handle();
     auto obj = _FunctionTemplate->GetFunction()->NewInstance(argCount, hArgs);
     delete[] hArgs; // TODO: (does "disposed" still need to be called here for each item?)
@@ -126,7 +126,7 @@ HandleProxy* FunctionTemplateProxy::CreateInstance(int32_t managedObjectID, int3
     proxyVal->_ObjectID = managedObjectID;
     //??auto count = obj->InternalFieldCount();
     obj->SetAlignedPointerInInternalField(0, this); // (stored a reference to the proxy instance for the call-back functions)
-    obj->SetInternalField(1, NewExternal((void*)managedObjectID)); // (stored a reference to the managed object for the call-back functions)
+    obj->SetInternalField(1, NewExternal(reinterpret_cast<void*>(managedObjectID))); // (stored a reference to the managed object for the call-back functions)
     obj->SetHiddenValue(NewString("ManagedObjectID"), NewInteger(managedObjectID)); // (won't be used on template created objects [fields are faster], but done anyhow for consistency)
     return proxyVal;
 }
