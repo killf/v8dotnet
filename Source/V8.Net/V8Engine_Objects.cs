@@ -109,14 +109,14 @@
 
                 newObject = new T
                 {
-                    _Engine = this,
+                    EngineInternal = this,
                     Template = template,
                     Handle = handle
                 };
 
                 using (m_objectsLocker.WriteLock()) // (need a lock because of the worker thread)
                 {
-                    newObject.ID = m_objects.Add(new ObservableWeakReference<V8NativeObject>(newObject));
+                    newObject.Id = m_objects.Add(new ObservableWeakReference<V8NativeObject>(newObject));
                 }
 
                 if (!handle.IsUndefined)
@@ -132,7 +132,7 @@
                                     ? ((FunctionTemplate) template).NativeFunctionTemplateProxy
                                     : null;
 
-                            V8NetProxy.ConnectObject(handle, newObject.ID, templateProxy);
+                            V8NetProxy.ConnectObject(handle, newObject.Id, templateProxy);
 
                             /* The V8 object will have an associated internal field set to the index of the created managed object above for quick lookup.  This index is used
                              * to locate the associated managed object when a call-back occurs. The lookup is a fast O(1) operation using the custom 'IndexedObjectList' manager.
@@ -141,7 +141,7 @@
                         catch (Exception)
                         {
                             // ... something went wrong, so remove the new managed object ...
-                            _RemoveObjectWeakReference(newObject.ID);
+                            _RemoveObjectWeakReference(newObject.Id);
                             handle.ObjectId = -1; // (existing ID no longer valid)
                             throw;
                         }

@@ -1,13 +1,13 @@
 ﻿namespace V8.Net
 {
     using System;
-    using System.Diagnostics;
     using System.Collections.Generic;
+    
     using System.Linq;
     using System.Reflection;
 
 #if !(V1_1 || V2 || V3 || V3_5)
-    using System.Dynamic;
+    using System.Diagnostics;
 #endif
 
 
@@ -1116,16 +1116,12 @@
         /// <returns>An exception on error, or null on success.</returns>
         internal bool _GetBindingForProperty(MemberDetailsInternal memberDetails, out V8NativeObjectPropertyGetter getter, out V8NativeObjectPropertySetter setter)
         {
-            var memberName = memberDetails.MemberName;
             var propInfo = (PropertyInfo)memberDetails.FirstMember;
             getter = null;
             setter = null;
 
             if (TypeTemplate == null)
                 throw new InvalidOperationException("'TypeTemplate' is null.");
-
-            if (string.IsNullOrEmpty(memberName))
-                memberName = propInfo.Name;
 
             if (propInfo.PropertyType == typeof(InternalHandle))
                 getter = _CreateGetAccessor<InternalHandle>(memberDetails, propInfo);
@@ -1188,7 +1184,7 @@
             return true;
         }
 
-        V8NativeObjectPropertySetter _CreateSetAccessor(MemberDetailsInternal memberDetails, PropertyInfo propertyInfo)
+        private V8NativeObjectPropertySetter _CreateSetAccessor(MemberDetailsInternal memberDetails, PropertyInfo propertyInfo)
         {
             MethodInfo handleSetter = null;
             if (typeof(IHandle).IsAssignableFrom(propertyInfo.PropertyType))
@@ -1215,7 +1211,7 @@
             };
         }
 
-        V8NativeObjectPropertyGetter _CreateGetAccessor<T>(MemberDetailsInternal memberDetails, PropertyInfo propertyInfo)
+        private V8NativeObjectPropertyGetter _CreateGetAccessor<T>(MemberDetailsInternal memberDetails, PropertyInfo propertyInfo)
         {
             var isSystemType = BoundType.Namespace == "System";
             //??var getMethod = propertyInfo.GetGetMethod();
@@ -1251,7 +1247,7 @@
             };
         }
 
-        V8NativeObjectPropertyGetter _CreateObjectGetAccessor(MemberDetailsInternal memberDetails, PropertyInfo propertyInfo)
+        private V8NativeObjectPropertyGetter _CreateObjectGetAccessor(MemberDetailsInternal memberDetails, PropertyInfo propertyInfo)
         {
             var isSystemType = BoundType.Namespace == "System";
             //??var getMethod = propertyInfo.GetGetMethod();
@@ -1327,7 +1323,7 @@
 
         // --------------------------------------------------------------------------------------------------------------------
 
-        InternalHandle _TranslateGenericArguments(MemberDetailsInternal memberDetails, Type[] expectedGenericTypes, InternalHandle[] args, ref uint argOffset,
+        private InternalHandle _TranslateGenericArguments(MemberDetailsInternal memberDetails, Type[] expectedGenericTypes, InternalHandle[] args, ref uint argOffset,
             out TypeLibrary<MemberInfo> constructedMembers, ref ParameterInfo[] expectedParameters)
         {
             var isGenericInvocation = ((MethodBase)memberDetails.FirstMember).IsGenericMethodDefinition; // (note: always false for constructors!)
@@ -1391,7 +1387,7 @@
             return InternalHandle.Empty;
         }
 
-        void _CopyArguments(ParameterInfo[] expectedParameters, Dictionary<int, object[]> convertedArgumentArrayCache, InternalHandle[] args,
+        private void _CopyArguments(ParameterInfo[] expectedParameters, Dictionary<int, object[]> convertedArgumentArrayCache, InternalHandle[] args,
             ref int paramIndex, uint argOffset, out object[] convertedArguments, out ArgInfo[] argInfos)
         {
             argInfos = ArgInfo.GetArguments(args, argOffset, expectedParameters);
@@ -1477,12 +1473,12 @@
             if (string.IsNullOrEmpty(className))
                 className = memberDetails.MemberName;
 
-            bool isGenericMember = ((MethodInfo)memberDetails.FirstMember).IsGenericMethodDefinition;
-            MethodInfo soloMethod = memberDetails.TotalImmediateMembers == 1 && !isGenericMember ? (MethodInfo)memberDetails.FirstMember : null;
+            var isGenericMember = ((MethodInfo)memberDetails.FirstMember).IsGenericMethodDefinition;
+            var soloMethod = memberDetails.TotalImmediateMembers == 1 && !isGenericMember ? (MethodInfo)memberDetails.FirstMember : null;
             var expectedParameters = soloMethod != null ? soloMethod.GetParameters() : null;
             var expectedGenericTypes = isGenericMember ? ((MethodInfo)memberDetails.FirstMember).GetGenericArguments() : null;
 
-            Dictionary<int, object[]> convertedArgumentArrayCache = new Dictionary<int, object[]>(); // (a cache of argument arrays based on argument length to use for calling overloaded methods)
+            var convertedArgumentArrayCache = new Dictionary<int, object[]>(); // (a cache of argument arrays based on argument length to use for calling overloaded methods)
             object[] convertedArguments;
             // (note: the argument array cache for method invocations will exist in the closure for this member only)
 
@@ -1642,7 +1638,7 @@
                 return handle;
             });
 
-            TypeFunction._BindingMode = BindingMode.Static;
+            TypeFunction.BindingModeInternal = BindingMode.Static;
             TypeFunction.TypeBinder = this;
 
             // TODO: Consolidate the below with the template version above (see '_ApplyBindingToTemplate()').
@@ -1791,57 +1787,60 @@
 
         new public object Object
         {
-            get { return _Object; }
+            get { return ObjectInternal; }
             set
             {
                 if (value == null) throw new InvalidOperationException("'value' cannot be null.");
 
                 var valueType = value.GetType();
 
-                if (_ObjectType == null)
+                if (m_objectType == null)
                 {
-                    _Object = value;
+                    ObjectInternal = value;
                     ObjectType = valueType;
                 }
-                else if (valueType == _ObjectType)
-                    _Object = value;
+                else if (valueType == m_objectType)
+                    ObjectInternal = value;
                 else
                     throw new InvalidOperationException("Once an object is set, you can only replace the instance with another of the SAME type.");
             }
         }
-        internal object _Object;
+        internal object ObjectInternal;
 
         public Type ObjectType
         {
-            get { return _ObjectType; }
+            get { return m_objectType; }
             private set
             {
-                if (value == null) throw new InvalidOperationException("'value' cannot be null.");
-                if (_ObjectType == null)
-                {
-                    _ObjectType = value;
-                    TypeBinder = Engine.RegisterType(_ObjectType);
-                }
+                if (value == null)
+                    throw new InvalidOperationException("'value' cannot be null.");
+
+                if (m_objectType != null)
+                    return;
+
+                m_objectType = value;
+                TypeBinder = Engine.RegisterType(m_objectType);
             }
         }
-        Type _ObjectType;
+        private Type m_objectType;
 
         public TypeBinder TypeBinder { get; private set; }
 
-        public ObjectBinder() { _BindingMode = BindingMode.Instance; }
+        public ObjectBinder() { BindingModeInternal = BindingMode.Instance; }
 
         // --------------------------------------------------------------------------------------------------------------------
 
         public override ObjectHandle Initialize(bool isConstructCall, params InternalHandle[] args)
         {
-            if (_Object == null)
+            if (ObjectInternal == null)
                 return base.Initialize(isConstructCall, args);
 
             if (ObjectType == null)
-                ObjectType = _Object.GetType();
+                ObjectType = ObjectInternal.GetType();
 
-            if (_Object is IV8NativeObject)
-                _Proxy = (IV8NativeObject)_Object;
+            var v8NativeObject = ObjectInternal as IV8NativeObject;
+            if (v8NativeObject != null)
+                ProxyInternal = v8NativeObject;
 
             return base.Initialize(isConstructCall, args);
         }
@@ -1857,17 +1856,20 @@
         public override InternalHandle IndexedPropertySetter(int index, InternalHandle value)
         {
             if (TypeBinder.Indexer != null && TypeBinder.Indexer.CanWrite)
-                TypeBinder.Indexer.SetValue(_Object, new ArgInfo(value, null, TypeBinder.Indexer.PropertyType).ValueOrDefault, new object[] { index });
+                TypeBinder.Indexer.SetValue(ObjectInternal, new ArgInfo(value, null, TypeBinder.Indexer.PropertyType).ValueOrDefault, new object[] { index });
             return IndexedPropertyGetter(index);
         }
+
         public override bool? IndexedPropertyDeleter(int index)
         {
             return null;
         }
+
         public override V8PropertyAttributes? IndexedPropertyQuery(int index)
         {
             return null;
         }
+
         public override InternalHandle IndexedPropertyEnumerator()
         {
             return InternalHandle.Empty;
@@ -1889,32 +1891,31 @@
             {
                 case MemberTypes.Field:
                 {
-                    var fieldInfo = (FieldInfo)memberDetails.FirstMember;
                     var getter = memberDetails.Getter;
-                    if (getter == null)
-                    {
-                        // .. first time access, create a binding ...
-                        V8NativeObjectPropertySetter setter;
-                        TypeBinder._GetBindingForDataMember(memberDetails, out getter, out setter);
-                        memberDetails.Getter = getter;
-                        memberDetails.Setter = setter;
-                    }
-                    return getter.Invoke(_Handle, propertyName);
+                    if (getter != null)
+                        return getter.Invoke(HandleInternal, propertyName);
+
+                    // .. first time access, create a binding ...
+                    V8NativeObjectPropertySetter setter;
+                    TypeBinder._GetBindingForDataMember(memberDetails, out getter, out setter);
+                    memberDetails.Getter = getter;
+                    memberDetails.Setter = setter;
+                    return getter.Invoke(HandleInternal, propertyName);
                 }
                 case MemberTypes.Property:
                 {
                     var propertyInfo = (PropertyInfo)memberDetails.FirstMember;
                     if (!propertyInfo.CanRead) break;
                     var getter = memberDetails.Getter;
-                    if (getter == null)
-                    {
-                        // .. first time access, create a binding ...
-                        V8NativeObjectPropertySetter setter;
-                        TypeBinder._GetBindingForDataMember(memberDetails, out getter, out setter);
-                        memberDetails.Getter = getter;
-                        memberDetails.Setter = setter;
-                    }
-                    return getter.Invoke(_Handle, propertyName);
+                    if (getter != null)
+                        return getter.Invoke(HandleInternal, propertyName);
+
+                    // .. first time access, create a binding ...
+                    V8NativeObjectPropertySetter setter;
+                    TypeBinder._GetBindingForDataMember(memberDetails, out getter, out setter);
+                    memberDetails.Getter = getter;
+                    memberDetails.Setter = setter;
+                    return getter.Invoke(HandleInternal, propertyName);
                 }
                 case MemberTypes.Method:
                 {
@@ -1964,7 +1965,7 @@
                             memberDetails.Getter = getter;
                             memberDetails.Setter = setter;
                         }
-                        return setter.Invoke(_Handle, propertyName, value);
+                        return setter.Invoke(HandleInternal, propertyName, value);
                     }
                     break;
                 }
@@ -1981,7 +1982,7 @@
                         memberDetails.Getter = getter;
                         memberDetails.Setter = setter;
                     }
-                    return setter.Invoke(_Handle, propertyName, value);
+                    return setter.Invoke(HandleInternal, propertyName, value);
                 }
                 case MemberTypes.Method:
                 {
@@ -2075,7 +2076,13 @@
         /// <summary>
         /// Returns true if a binding exists for the specified type.
         /// </summary>
-        public bool IsTypeRegistered(Type type) { return BindersInternal.ContainsKey(type); }
+        public bool IsTypeRegistered(Type type)
+        {
+            lock (BindersInternal)
+            {
+                return BindersInternal.ContainsKey(type);
+            }
+        }
 
         /// <summary>
         /// Registers binding related schema for the given type on top an 'ObjectTemplate' instance.  If a type already exists that doesn't match the given parameters, it is replaced.
@@ -2103,7 +2110,11 @@
         public TypeBinder RegisterType(Type type, string className, bool? recursive, ScriptMemberSecurity? memberSecurity)
         {
             TypeBinder binder;
-            lock (BindersInternal) { BindersInternal.TryGetValue(type, out binder); }
+            lock (BindersInternal)
+            {
+                BindersInternal.TryGetValue(type, out binder);
+            }
+
             if (binder == null || (className != null && className != binder.ClassName))
                 return new TypeBinder(this, type, className, recursive, memberSecurity);
 

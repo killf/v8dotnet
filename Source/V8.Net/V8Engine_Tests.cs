@@ -38,35 +38,35 @@
 
         private byte _GetMarshalTestByteValue(byte ofs, out byte[] data)
         {
-            IntPtr mem = Marshal.AllocCoTaskMem(1);
+            var mem = Marshal.AllocCoTaskMem(1);
             data = new byte[1];
             Marshal.WriteByte(mem, data[0] = ofs);
-            byte* _val = (byte*)mem;
-            byte result = *_val;
+            byte* val = (byte*)mem;
+            byte result = *val;
             Marshal.FreeCoTaskMem(mem);
             return result;
         }
 
         private Int32 _GetMarshalTestInt32Value(byte ofs, out byte[] data)
         {
-            IntPtr mem = Marshal.AllocCoTaskMem(4);
+            var mem = Marshal.AllocCoTaskMem(4);
             data = new byte[4];
             for (byte i = 0; i < data.Length; i++)
                 Marshal.WriteByte((IntPtr)(mem.ToInt64() + i), data[i] = (byte)(ofs + i));
-            Int32* _val = (Int32*)mem;
-            Int32 result = *_val;
+            Int32* val = (Int32*)mem;
+            Int32 result = *val;
             Marshal.FreeCoTaskMem(mem);
             return result;
         }
 
         private Int64 _GetMarshalTestInt64Value(byte ofs, out byte[] data)
         {
-            IntPtr mem = Marshal.AllocCoTaskMem(8);
+            var mem = Marshal.AllocCoTaskMem(8);
             data = new byte[8];
             for (byte i = 0; i < data.Length; i++)
                 Marshal.WriteByte((IntPtr)(mem.ToInt64() + i), data[i] = (byte)(ofs + i));
-            Int64* _val = (Int64*)mem;
-            Int64 result = *_val;
+            var val = (Int64*)mem;
+            Int64 result = *val;
             Marshal.FreeCoTaskMem(mem);
             return result;
         }
@@ -77,8 +77,8 @@
             data = new byte[8];
             for (byte i = 0; i < data.Length; i++)
                 Marshal.WriteByte((IntPtr)(mem.ToInt64() + i), data[i] = (byte)(ofs + i));
-            double* _val = (double*)mem;
-            double result = *_val;
+            double* val = (double*)mem;
+            double result = *val;
             Marshal.FreeCoTaskMem(mem);
             return result;
         }
@@ -89,9 +89,9 @@
             data = new byte[IntPtr.Size];
             for (byte i = 0; i < data.Length; i++)
                 Marshal.WriteByte((IntPtr)(mem.ToInt64() + i), data[i] = (byte)(ofs + i));
-            Int32* _val32 = (Int32*)mem;
-            Int64* _val64 = (Int64*)mem;
-            Int64 result = data.Length == 8 ? *_val64 : *_val32;
+            Int32* val32 = (Int32*)mem;
+            Int64* val64 = (Int64*)mem;
+            Int64 result = data.Length == 8 ? *val64 : *val32;
             Marshal.FreeCoTaskMem(mem);
             return result;
         }
@@ -102,7 +102,7 @@
         public void RunMarshallingTests()
         {
             HandleProxy* hp = V8NetProxy.CreateHandleProxyTest();
-            NativeV8EngineProxy* nv8ep = V8NetProxy.CreateV8EngineProxyTest();
+            NativeV8EngineProxy* nv8Ep = V8NetProxy.CreateV8EngineProxyTest();
             NativeObjectTemplateProxy* notp = V8NetProxy.CreateObjectTemplateProxyTest();
             NativeFunctionTemplateProxy* nftp = V8NetProxy.CreateFunctionTemplateProxyTest();
 
@@ -140,10 +140,10 @@
                 ofs = (byte)((int)&hp->NativeV8Handle - (int)hp);
                 if ((Int64)hp->NativeV8Handle != _GetMarshalTestPTRValue(ofs, out data)) _ThrowMarshalTestError("HandleProxy", "NativeV8Handle", ofs, data, (byte*)&hp->NativeV8Handle); // The native V8 persistent object handle (not used on the managed side).
 
-                ofs = (byte)((int)&nv8ep->NativeClassType - (int)nv8ep);
-                if (nv8ep->NativeClassType != ProxyObjectType.V8EngineProxyClass) _ThrowMarshalTestError("NativeV8EngineProxy", "NativeClassType", ofs, null, (byte*)&nv8ep->NativeClassType, 4);
-                ofs = (byte)((int)&nv8ep->ID - (int)nv8ep);
-                if ((Int32)nv8ep->ID != _GetMarshalTestInt32Value(ofs, out data)) _ThrowMarshalTestError("NativeV8EngineProxy", "ID", ofs, data, (byte*)&nv8ep->ID);
+                ofs = (byte)((int)&nv8Ep->NativeClassType - (int)nv8Ep);
+                if (nv8Ep->NativeClassType != ProxyObjectType.V8EngineProxyClass) _ThrowMarshalTestError("NativeV8EngineProxy", "NativeClassType", ofs, null, (byte*)&nv8Ep->NativeClassType, 4);
+                ofs = (byte)((int)&nv8Ep->ID - (int)nv8Ep);
+                if ((Int32)nv8Ep->ID != _GetMarshalTestInt32Value(ofs, out data)) _ThrowMarshalTestError("NativeV8EngineProxy", "ID", ofs, data, (byte*)&nv8Ep->ID);
                 ofs += (byte)data.Length;
 
                 ofs = (byte)((int)&notp->NativeClassType - (int)notp);
@@ -169,7 +169,7 @@
             finally
             {
                 V8NetProxy.DeleteTestData(hp);
-                V8NetProxy.DeleteTestData(nv8ep);
+                V8NetProxy.DeleteTestData(nv8Ep);
                 V8NetProxy.DeleteTestData(notp);
                 V8NetProxy.DeleteTestData(nftp);
             }

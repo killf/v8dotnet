@@ -214,9 +214,9 @@ namespace V8.Net
             foreach (ObservableWeakReference<V8NativeObject> t in m_objects)
                 if ((weakRef = t) != null && weakRef.Object != null)
                 {
-                    weakRef.Object._ID = null;
+                    weakRef.Object.IdInternal = null;
                     weakRef.Object.Template = null;
-                    weakRef.Object._Handle = ObjectHandle.Empty;
+                    weakRef.Object.HandleInternal = ObjectHandle.Empty;
                 }
 
             // ... destroy the native engine ...
@@ -766,7 +766,7 @@ namespace V8.Net
             try
             {
                 // ... create a new native object and associated it with the new managed object ID ...
-                obj._Handle._Set(V8NetProxy.CreateObject(NativeV8EngineProxy, obj.ID));
+                obj.HandleInternal._Set(V8NetProxy.CreateObject(NativeV8EngineProxy, obj.Id));
 
                 /* The V8 object will have an associated internal field set to the index of the created managed object above for quick lookup.  This index is used
                  * to locate the associated managed object when a call-back occurs. The lookup is a fast O(1) operation using the custom 'IndexedObjectList' manager.
@@ -775,7 +775,7 @@ namespace V8.Net
             catch (Exception)
             {
                 // ... something went wrong, so remove the new managed object ...
-                _RemoveObjectWeakReference(obj.ID);
+                _RemoveObjectWeakReference(obj.Id);
                 throw;
             }
 

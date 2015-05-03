@@ -54,19 +54,21 @@
 
         ~FunctionTemplate()
         {
-            if (!((IFinalizable)this).CanFinalize)
-                lock (Engine._ObjectsToFinalize)
-                {
-                    Engine._ObjectsToFinalize.Add(this);
-                    GC.ReRegisterForFinalize(this);
-                }
+            if (((IFinalizable) this).CanFinalize)
+                return;
+
+            lock (Engine.ObjectsToFinalizeInternal)
+            {
+                Engine.ObjectsToFinalizeInternal.Add(this);
+                GC.ReRegisterForFinalize(this);
+            }
         }
 
         bool IFinalizable.CanFinalize { get; set; }
 
         void IFinalizable.DoFinalize()
         {
-            if (((ITemplateInternal)this)._ReferenceCount == 0
+            if (((ITemplateInternal)this).ReferenceCountInternal == 0
                 && Engine.GetObjects(this).Length == 0
                 && Engine.GetObjects(PrototypeTemplate).Length == 0
                 && Engine.GetObjects(InstanceTemplate).Length == 0)
@@ -251,9 +253,9 @@
             // ... get the function's prototype object, wrap it, and give it to the new function object ...
             // (note: this is a special case, because the function object auto generates the prototype object natively using an existing object template)
 
-            func._Prototype = V8NetProxy.GetObjectPrototype(func._Handle);
+            func.PrototypeInternal = V8NetProxy.GetObjectPrototype(func.HandleInternal);
 
-            m_functionsByType[typeof(T)] = func.ID; // (this exists to index functions by type)
+            m_functionsByType[typeof(T)] = func.Id; // (this exists to index functions by type)
 
             func.Initialize(false, null);
 
@@ -329,7 +331,7 @@
 
             try
             {
-                obj._Handle._Set(V8NetProxy.CreateFunctionInstance(NativeFunctionTemplateProxy, obj.ID, args.Length, argsInternal));
+                obj.HandleInternal._Set(V8NetProxy.CreateFunctionInstance(NativeFunctionTemplateProxy, obj.Id, args.Length, argsInternal));
                 // (note: setting '_NativeObject' also updates it's '_ManagedObject' field if necessary.
 
                 obj.Initialize(true, args);
@@ -337,7 +339,7 @@
             catch (Exception)
             {
                 // ... something went wrong, so remove the new managed object ...
-                Engine._RemoveObjectWeakReference(obj.ID);
+                Engine._RemoveObjectWeakReference(obj.Id);
                 throw;
             }
             finally

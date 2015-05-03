@@ -149,7 +149,7 @@
         {
 #if (V1_1 || V2 || V3 || V3_5 || V4)
             if (!type.IsGenericType) return false;
-            return (from a in type.GetGenericArguments() where a.IsGenericParameter select a).Count() == 0;
+            return !type.GetGenericArguments().Any(a => a.IsGenericParameter);
 #else
             return type.IsConstructedGenericType;
 #endif
@@ -251,7 +251,11 @@
         /// <param name="defaultVal">New value if "val" is null or DBNull.Value.</param>
         /// <returns></returns>
         public static string ND(object val, string defaultVal)
-        { return (val == DBNull.Value || val == null) ? (defaultVal) : ((val is string) ? (string)val : val.ToString()); }
+        {
+            return (val == DBNull.Value || val == null)
+                ? (defaultVal)
+                : ((val is string) ? (string) val : val.ToString());
+        }
 
         public static T ND<T>(object val, T defaultVal) where T : class
         { return (val == DBNull.Value || val == null) ? (defaultVal) : ((T)val); }

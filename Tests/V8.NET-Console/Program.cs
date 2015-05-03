@@ -1,17 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Reflection;
-using System.Runtime.ExceptionServices;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Timers;
 using V8.Net;
 
 namespace V8.Net
 {
+    using System;
+    using System.Collections;
+    using System.Diagnostics;
+    using System.IO;
+    using System.Linq;
+    using System.Runtime.ExceptionServices;
+    using System.Threading;
+    using Timer = System.Timers.Timer;
+
     public class SamplePointFunctionTemplate : FunctionTemplate
     {
         public SamplePointFunctionTemplate() { }
@@ -27,7 +27,7 @@ namespace V8.Net
     {
         static V8Engine _JSServer;
 
-        static System.Timers.Timer _TitleUpdateTimer;
+        static Timer _TitleUpdateTimer;
 
         static void Main(string[] args)
         {
@@ -44,7 +44,7 @@ namespace V8.Net
                 _JSServer.RunMarshallingTests();
                 Console.WriteLine(" Pass!");
 
-                _TitleUpdateTimer = new System.Timers.Timer(500);
+                _TitleUpdateTimer = new Timer(500);
                 _TitleUpdateTimer.AutoReset = true;
                 _TitleUpdateTimer.Elapsed += (_o, _e) =>
                 {
@@ -68,7 +68,7 @@ namespace V8.Net
                     _JSServer.RegisterType(typeof(String), "String", true, ScriptMemberSecurity.Locked);
                     _JSServer.RegisterType(typeof(Boolean), "Boolean", true, ScriptMemberSecurity.Locked);
                     _JSServer.RegisterType(typeof(Array), "Array", true, ScriptMemberSecurity.Locked);
-                    _JSServer.RegisterType(typeof(System.Collections.ArrayList), null, true, ScriptMemberSecurity.Locked);
+                    _JSServer.RegisterType(typeof(ArrayList), null, true, ScriptMemberSecurity.Locked);
                     _JSServer.RegisterType(typeof(char), null, true, ScriptMemberSecurity.Locked);
                     _JSServer.RegisterType(typeof(int), null, true, ScriptMemberSecurity.Locked);
                     _JSServer.RegisterType(typeof(Int16), null, true, ScriptMemberSecurity.Locked);
@@ -78,7 +78,7 @@ namespace V8.Net
                     _JSServer.RegisterType(typeof(UInt32), null, true, ScriptMemberSecurity.Locked);
                     _JSServer.RegisterType(typeof(UInt64), null, true, ScriptMemberSecurity.Locked);
                     _JSServer.RegisterType(typeof(Enumerable), null, true, ScriptMemberSecurity.Locked);
-                    _JSServer.RegisterType(typeof(System.IO.File), null, true, ScriptMemberSecurity.Locked);
+                    _JSServer.RegisterType(typeof(File), null, true, ScriptMemberSecurity.Locked);
 
                     ObjectHandle hSystem = _JSServer.CreateObject();
                     _JSServer.DynamicGlobalObject.System = hSystem;
@@ -87,7 +87,7 @@ namespace V8.Net
                     hSystem.SetProperty(typeof(Boolean));
                     hSystem.SetProperty(typeof(Array));
                     _JSServer.GlobalObject.SetProperty(typeof(Type));
-                    _JSServer.GlobalObject.SetProperty(typeof(System.Collections.ArrayList));
+                    _JSServer.GlobalObject.SetProperty(typeof(ArrayList));
                     _JSServer.GlobalObject.SetProperty(typeof(char));
                     _JSServer.GlobalObject.SetProperty(typeof(int));
                     _JSServer.GlobalObject.SetProperty(typeof(Int16));
@@ -98,7 +98,7 @@ namespace V8.Net
                     _JSServer.GlobalObject.SetProperty(typeof(UInt64));
                     _JSServer.GlobalObject.SetProperty(typeof(Enumerable));
                     _JSServer.GlobalObject.SetProperty(typeof(Environment));
-                    _JSServer.GlobalObject.SetProperty(typeof(System.IO.File));
+                    _JSServer.GlobalObject.SetProperty(typeof(File));
 
                     _JSServer.GlobalObject.SetProperty(typeof(Uri), V8PropertyAttributes.Locked, null, true, ScriptMemberSecurity.Locked); // (Note: Not yet registered, but will auto register!)
                     _JSServer.GlobalObject.SetProperty("uri", new Uri("http://www.example.com"));
@@ -296,7 +296,7 @@ namespace V8.Net
                             // (note: we do not call 'Set()' on 'internalHandle' because the "Handle" type takes care of the disposal)
 
                             for (i = 0; i < 3000 && internalHandle.ReferenceCount > 1; i++)
-                                System.Threading.Thread.Sleep(1); // (just wait for the worker)
+                                Thread.Sleep(1); // (just wait for the worker)
 
                             if (internalHandle.ReferenceCount > 1)
                                 throw new Exception("Handle is still not ready for GC ... something is wrong.");
@@ -320,7 +320,7 @@ namespace V8.Net
                             Console.WriteLine("Waiting on the worker to make the object weak on the native V8 side ... ");
 
                             for (i = 0; i < 6000 && !internalHandle.IsNativelyWeak; i++)
-                                System.Threading.Thread.Sleep(1);
+                                Thread.Sleep(1);
 
                             if (!internalHandle.IsNativelyWeak)
                                 throw new Exception("Object is not weak yet ... something is wrong.");
@@ -331,7 +331,7 @@ namespace V8.Net
                             for (i = 0; i < 3000 && !internalHandle.IsDisposed; i++)
                             {
                                 _JSServer.ForceV8GarbageCollection();
-                                System.Threading.Thread.Sleep(1);
+                                Thread.Sleep(1);
                             }
 
                             Console.WriteLine("Looking for object ...");

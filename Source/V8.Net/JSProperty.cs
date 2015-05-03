@@ -120,9 +120,9 @@
         ~JSProperty()
         {
             if (!((IFinalizable)this).CanFinalize && m_value.Engine != null)
-                lock (m_value.Engine._ObjectsToFinalize)
+                lock (m_value.Engine.ObjectsToFinalizeInternal)
                 {
-                    m_value.Engine._ObjectsToFinalize.Add(this);
+                    m_value.Engine.ObjectsToFinalizeInternal.Add(this);
                     GC.ReRegisterForFinalize(this);
                 }
         }

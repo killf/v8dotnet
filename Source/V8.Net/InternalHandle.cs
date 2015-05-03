@@ -362,7 +362,7 @@
         /// <summary>
         /// Returns the managed object ID "as is".
         /// </summary>
-        internal Int32 _CurrentObjectId
+        internal Int32 CurrentObjectIdInternal
         {
             get { return HandleProxyInternal != null ? HandleProxyInternal->_ObjectID : -1; }
             set { if (HandleProxyInternal != null) HandleProxyInternal->_ObjectID = value; }
@@ -425,7 +425,7 @@
                 if (HandleProxyInternal->_ObjectID < -1 || !IsObjectType || ObjectId < 0)
                     return false;
 
-                var weakRef = Engine._GetObjectWeakReference(_CurrentObjectId);
+                var weakRef = Engine._GetObjectWeakReference(CurrentObjectIdInternal);
                 return weakRef != null;
             }
         }
@@ -485,14 +485,14 @@
         {
             get
             {
-                var id = _CurrentObjectId;
+                var id = CurrentObjectIdInternal;
                 if (id >= 0)
                 {
-                    var owr = Engine._GetObjectWeakReference(_CurrentObjectId);
+                    var owr = Engine._GetObjectWeakReference(CurrentObjectIdInternal);
                     if (owr != null)
                         return owr.IsGCReady;
                     else
-                        _CurrentObjectId = id = -1; // (this ID is no longer valid)
+                        CurrentObjectIdInternal = id = -1; // (this ID is no longer valid)
                 }
                 return id == -1;
             }
@@ -558,7 +558,7 @@
 
                 V8NetProxy.DisposeHandleProxy(HandleProxyInternal);
 
-                _CurrentObjectId = -1;
+                CurrentObjectIdInternal = -1;
 
                 HandleProxyInternal = null;
 
@@ -586,14 +586,14 @@
                     var obj = weakRef.Object;
                     var placeHolder = new V8NativeObject
                     {
-                        _Engine = obj._Engine,
+                        EngineInternal = obj.EngineInternal,
                         Template = obj.Template
                     };
                     weakRef.SetTarget(placeHolder); // (this must be done first before moving the handle to the new object!)
                     placeHolder.Handle = obj.Handle;
                     obj.Template = null;
-                    obj._ID = null;
-                    obj._Handle.Set(Empty);
+                    obj.IdInternal = null;
+                    obj.HandleInternal.Set(Empty);
                     return obj;
                 }
             return null;
@@ -654,12 +654,12 @@
         /// <summary>
         /// Used internally to quickly determine when an instance represents a binder object type (faster than reflection!).
         /// </summary>
-        public bool IsBinder { get { return IsObjectType && HasObject && Object._BindingMode != BindingMode.None; } }
+        public bool IsBinder { get { return IsObjectType && HasObject && Object.BindingModeInternal != BindingMode.None; } }
 
         /// <summary>
         /// Returns the binding mode (Instance, Static, or None) represented by this handle.  The return is 'None' (0) if not applicable.
         /// </summary>
-        public BindingMode BindingMode { get { return IsBinder ? Object._BindingMode : BindingMode.None; } }
+        public BindingMode BindingMode { get { return IsBinder ? Object.BindingModeInternal : BindingMode.None; } }
 
         // --------------------------------------------------------------------------------------------------------------------
 
@@ -748,7 +748,7 @@
                     if (HasObject)
                     {
                         var mo = Engine._GetObjectAsIs(ObjectId);
-                        managedType = " (" + (mo != null ? mo.GetType().Name + " [" + mo.ID + "]" : "associated managed object is null") + ")";
+                        managedType = " (" + (mo != null ? mo.GetType().Name + " [" + mo.Id + "]" : "associated managed object is null") + ")";
                     }
 
                     return "<object: " + Enum.GetName(typeof(JSValueType), ValueType) + managedType + disposal + ">";

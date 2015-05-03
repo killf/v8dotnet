@@ -55,8 +55,13 @@
 
         public string InScriptName { get; private set; }
 
-        public ScriptMemberSecurity Security { get { return _Security; } private set { _Security = value; } }
-        ScriptMemberSecurity _Security = ScriptMemberSecurity.ReadWrite;
+        public ScriptMemberSecurity Security
+        {
+            get { return m_security; }
+            private set { m_security = value; }
+        }
+
+        private ScriptMemberSecurity m_security = ScriptMemberSecurity.ReadWrite;
 
         // --------------------------------------------------------------------------------------------------------------------
 
@@ -65,18 +70,27 @@
         /// </summary>
         /// <param name="inScriptName">The type name to expose to the scripting environment for this member (default is null/empty, which means use the member name as is).</param>
         /// <param name="security">The script access security for this member.</param>
-        public ScriptMember(string inScriptName = null, ScriptMemberSecurity security = ScriptMemberSecurity.ReadWrite)
+        public ScriptMember(ScriptMemberSecurity security) : this(null, security)
         {
-            InScriptName = inScriptName;
-            Security = security;
         }
 
         /// <summary>
         /// Allows controlling how this class member is exposed to the scripting environment.
         /// </summary>
+        /// <param name="inScriptName">The type name to expose to the scripting environment for this member (default is null/empty, which means use the member name as is).</param>
         /// <param name="security">The script access security for this member.</param>
-        public ScriptMember(ScriptMemberSecurity security)
+        public ScriptMember(string inScriptName) : this(inScriptName, ScriptMemberSecurity.ReadWrite)
         {
+        }
+
+        /// <summary>
+        /// Allows controlling how this class member is exposed to the scripting environment.
+        /// </summary>
+        /// <param name="inScriptName">The type name to expose to the scripting environment for this member (default is null/empty, which means use the member name as is).</param>
+        /// <param name="security">The script access security for this member.</param>
+        public ScriptMember(string inScriptName, ScriptMemberSecurity security)
+        {
+            InScriptName = inScriptName;
             Security = security;
         }
 
@@ -94,8 +108,13 @@
 
         public string TypeName { get; private set; }
 
-        public ScriptMemberSecurity Security { get { return _Security; } private set { _Security = value; } }
-        ScriptMemberSecurity _Security = ScriptMemberSecurity.ReadWrite;
+        public ScriptMemberSecurity Security
+        {
+            get { return m_security; }
+            private set { m_security = value; }
+        }
+
+        private ScriptMemberSecurity m_security = ScriptMemberSecurity.ReadWrite;
 
         // --------------------------------------------------------------------------------------------------------------------
 
@@ -104,18 +123,28 @@
         /// </summary>
         /// <param name="typeName">The function name to use when exposing a class to the scripting environment (default is null/empty, which means use the class name as is).</param>
         /// <param name="security">The global default access for all public class members (default is read/write).</param>
-        public ScriptObject(string typeName = null, ScriptMemberSecurity security = ScriptMemberSecurity.ReadWrite)
+        public ScriptObject(string typeName)
+            : this(typeName, ScriptMemberSecurity.ReadWrite)
         {
-            TypeName = typeName;
-            Security = security;
         }
 
         /// <summary>
-        /// Allows specifying the default member access for all public members of a class at once.
+        /// Allows specifying the default member access for all public members of this class at once.
         /// </summary>
-        /// <param name="security">The global default access for all public class members.</param>
-        public ScriptObject(ScriptMemberSecurity security)
+        /// <param name="typeName">The function name to use when exposing a class to the scripting environment (default is null/empty, which means use the class name as is).</param>
+        /// <param name="security">The global default access for all public class members (default is read/write).</param>
+        public ScriptObject(ScriptMemberSecurity security) : this(null, security)
         {
+        }
+
+        /// <summary>
+        /// Allows specifying the default member access for all public members of this class at once.
+        /// </summary>
+        /// <param name="typeName">The function name to use when exposing a class to the scripting environment (default is null/empty, which means use the class name as is).</param>
+        /// <param name="security">The global default access for all public class members (default is read/write).</param>
+        public ScriptObject(string typeName, ScriptMemberSecurity security)
+        {
+            TypeName = typeName;
             Security = security;
         }
 

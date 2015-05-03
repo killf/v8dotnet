@@ -6,7 +6,11 @@
 
     public class V8Exception : Exception
     {
-        InternalHandle Handle { get { return m_handle; } }
+        private InternalHandle Handle
+        {
+            get { return m_handle; }
+        }
+
         InternalHandle m_handle;
 
         public V8Exception(InternalHandle handle, Exception innerException)

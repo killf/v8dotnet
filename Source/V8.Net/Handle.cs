@@ -1,14 +1,14 @@
 ﻿namespace V8.Net
 {
     using System;
-    using System.Collections.Generic;
     using System.Globalization;
-    using System.Linq.Expressions;
 
     // ========================================================================================================================
 #if !(V1_1 || V2 || V3 || V3_5)
     using System.Dynamic;
+    using System.Collections.Generic;
     using System.Reflection;
+    using System.Linq.Expressions;
 
     //public unsafe class DynamicHandleMetaObject : DynamicMetaObject
     //{
@@ -81,10 +81,15 @@
 
 #else
     public interface IDynamicMetaObjectProvider { }
-    public partial class Expression { public static Expression Empty() { return null; } }
+    public class Expression { public static Expression Empty() { return null; } }
     public enum BindingRestrictions { Empty }
-    public partial class DynamicMetaObject
-    { public DynamicMetaObject(Expression ex, BindingRestrictions rest, object value) { } }
+
+    public class DynamicMetaObject
+    {
+        public DynamicMetaObject(Expression ex, BindingRestrictions rest, object value)
+        {
+        }
+    }
 #endif
 
     // ========================================================================================================================
@@ -315,11 +320,11 @@
         ~Handle()
         {
             if (!((IFinalizable)this).CanFinalize && Engine != null)
-                lock (Engine._ObjectsToFinalize)
+                lock (Engine.ObjectsToFinalizeInternal)
                 {
-                    var isLastHandleForObject = (_CurrentObjectId >= 0 && ReferenceCount == 1);
+                    var isLastHandleForObject = (CurrentObjectIdInternal >= 0 && ReferenceCount == 1);
                     if (!isLastHandleForObject) // (there should ALWAYS be at least one handle associated with an object)
-                        Engine._ObjectsToFinalize.Add(this);
+                        Engine.ObjectsToFinalizeInternal.Add(this);
                     GC.ReRegisterForFinalize(this);
                 }
         }
@@ -412,14 +417,16 @@
         {
             var h = InternalHandle._WrapOnly(handleProxy);
             if (h.IsObjectType) return new ObjectHandle(handleProxy);
-            return h.IsEmpty ? Handle.Empty : new Handle(handleProxy);
+            return h.IsEmpty ? Empty : new Handle(handleProxy);
         }
 
         // --------------------------------------------------------------------------------------------------------------------
 
         public static bool operator ==(Handle h1, Handle h2)
         {
+            // ReSharper disable RedundantCast
             return (object)h1 == (object)h2 || (object)h1 != null && h1.Equals(h2);
+            // ReSharper restore RedundantCast
         }
 
         public static bool operator !=(Handle h1, Handle h2)
@@ -517,10 +524,10 @@
         /// <summary>
         /// Returns the managed object ID "as is".
         /// </summary>
-        internal Int32 _CurrentObjectId
+        internal Int32 CurrentObjectIdInternal
         {
-            get { return HandleInternal._CurrentObjectId; }
-            set { HandleInternal._CurrentObjectId = value; }
+            get { return HandleInternal.CurrentObjectIdInternal; }
+            set { HandleInternal.CurrentObjectIdInternal = value; }
         }
 
         /// <summary>
@@ -541,7 +548,7 @@
         /// <summary>
         /// Returns the registered type ID for objects that represent registered CLR types.
         /// </summary>
-        public Int32 CLRTypeID { get { return HandleInternal.ClrTypeId; } }
+        public Int32 ClrTypeId { get { return HandleInternal.ClrTypeId; } }
 
         /// <summary>
         /// If this handle represents a type binder, then this returns the associated 'TypeBinder' instance.

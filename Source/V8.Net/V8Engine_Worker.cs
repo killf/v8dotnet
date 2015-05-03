@@ -26,15 +26,15 @@
         /// <summary>
         /// When 'V8NativeObject' objects are no longer in use, they are registered here for quick reference so the worker thread can dispose of them.
         /// </summary>
-        internal readonly List<int> _WeakObjects = new List<int>(100);
-        int _WeakObjects_Index = -1;
+        internal readonly List<int> WeakObjectsInternal = new List<int>(100);
+        private int m_weakObjectsIndex = -1;
 
-        internal readonly List<IFinalizable> _ObjectsToFinalize = new List<IFinalizable>(100);
-        int _ObjectsToFinalize_Index = -1;
+        internal readonly List<IFinalizable> ObjectsToFinalizeInternal = new List<IFinalizable>(100);
+        private int m_objectsToFinalizeIndex = -1;
 
         // --------------------------------------------------------------------------------------------------------------------
 
-        void _Initialize_Worker()
+        private void _Initialize_Worker()
         {
             WorkerThreadInternal = new Thread(_WorkerLoop)
             {
@@ -47,22 +47,22 @@
 
         // --------------------------------------------------------------------------------------------------------------------
 
-        volatile int _PauseWorker;
+        private volatile int m_pauseWorker;
 
-        void _WorkerLoop()
+        private void _WorkerLoop()
         {
             while (true)
             {
                 //??if (GlobalObject.AsInternalHandle._HandleProxy->Disposed > 0)
                 //    System.Diagnostics.Debugger.Break();
 
-                if (_PauseWorker == 1) _PauseWorker = 2;
-                else if (_PauseWorker == -1) break;
+                if (m_pauseWorker == 1) m_pauseWorker = 2;
+                else if (m_pauseWorker == -1) break;
                 else
                 {
-                    var workPending = _WeakObjects.Count > 0 || _ObjectsToFinalize.Count > 0;
+                    var workPending = WeakObjectsInternal.Count > 0 || ObjectsToFinalizeInternal.Count > 0;
 
-                    while (workPending && _PauseWorker == 0)
+                    while (workPending && m_pauseWorker == 0)
                     {
                         workPending = _DoWorkStep();
                         DoIdleNotification(1);
@@ -73,31 +73,31 @@
                 DoIdleNotification(100);
             }
 
-            _PauseWorker = -2;
+            m_pauseWorker = -2;
         }
 
         /// <summary>
         /// Does one step in the work process (mostly garbage collection for freeing up unused handles).
         /// True is returned if more work is pending, and false otherwise.
         /// </summary>
-        bool _DoWorkStep()
+        private bool _DoWorkStep()
         {
             // ... do one weak object ...
 
             var objId = -1;
 
-            lock (_WeakObjects)
+            lock (WeakObjectsInternal)
             {
-                if (_WeakObjects_Index < 0)
-                    _WeakObjects_Index = _WeakObjects.Count - 1;
+                if (m_weakObjectsIndex < 0)
+                    m_weakObjectsIndex = WeakObjectsInternal.Count - 1;
 
-                if (_WeakObjects_Index >= 0)
+                if (m_weakObjectsIndex >= 0)
                 {
-                    objId = _WeakObjects[_WeakObjects_Index];
+                    objId = WeakObjectsInternal[m_weakObjectsIndex];
 
-                    _WeakObjects.RemoveAt(_WeakObjects_Index);
+                    WeakObjectsInternal.RemoveAt(m_weakObjectsIndex);
 
-                    _WeakObjects_Index--;
+                    m_weakObjectsIndex--;
                 }
             }
 
@@ -115,25 +115,25 @@
 
             IFinalizable objectToFinalize = null;
 
-            lock (_ObjectsToFinalize)
+            lock (ObjectsToFinalizeInternal)
             {
-                if (_ObjectsToFinalize_Index < 0)
-                    _ObjectsToFinalize_Index = _ObjectsToFinalize.Count - 1;
+                if (m_objectsToFinalizeIndex < 0)
+                    m_objectsToFinalizeIndex = ObjectsToFinalizeInternal.Count - 1;
 
-                if (_ObjectsToFinalize_Index >= 0)
+                if (m_objectsToFinalizeIndex >= 0)
                 {
-                    objectToFinalize = _ObjectsToFinalize[_ObjectsToFinalize_Index];
+                    objectToFinalize = ObjectsToFinalizeInternal[m_objectsToFinalizeIndex];
 
-                    _ObjectsToFinalize.RemoveAt(_ObjectsToFinalize_Index);
+                    ObjectsToFinalizeInternal.RemoveAt(m_objectsToFinalizeIndex);
 
-                    _ObjectsToFinalize_Index--;
+                    m_objectsToFinalizeIndex--;
                 }
             }
 
             if (objectToFinalize != null)
                 objectToFinalize.DoFinalize();
 
-            return _WeakObjects_Index >= 0 || _ObjectsToFinalize_Index >= 0;
+            return m_weakObjectsIndex >= 0 || m_objectsToFinalizeIndex >= 0;
         }
 
         /// <summary>
@@ -143,8 +143,8 @@
         {
             if (WorkerThreadInternal.IsAlive)
             {
-                _PauseWorker = 1;
-                while (_PauseWorker == 1 && WorkerThreadInternal.IsAlive) { }
+                m_pauseWorker = 1;
+                while (m_pauseWorker == 1 && WorkerThreadInternal.IsAlive) { }
             }
         }
 
@@ -156,9 +156,9 @@
         {
             if (WorkerThreadInternal.IsAlive)
             {
-                _PauseWorker = -1;
+                m_pauseWorker = -1;
                 var timeoutCountdown = 3000;
-                while (_PauseWorker == -1 && WorkerThreadInternal.IsAlive)
+                while (m_pauseWorker == -1 && WorkerThreadInternal.IsAlive)
                     if (timeoutCountdown-- > 0)
                         Thread.Sleep(1);
                     else
@@ -174,7 +174,7 @@
         /// </summary>
         public void ResumeWorker()
         {
-            _PauseWorker = 0;
+            m_pauseWorker = 0;
         }
 
         // --------------------------------------------------------------------------------------------------------------------

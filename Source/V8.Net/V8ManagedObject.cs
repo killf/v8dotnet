@@ -148,12 +148,18 @@
         /// You should never change handles on managed objects because they are usually associated with object interceptors,
         /// and changing the handle will break the call-back system.
         /// </summary>
-        new Handle Handle { get { return _Handle; } }
+        private new Handle Handle
+        {
+            get { return HandleInternal; }
+        }
 
         /// <summary>
         /// A reference to the ObjectTemplate instance that owns this object.
         /// </summary>
-        public ObjectTemplate ObjectTemplate { get { return (ObjectTemplate)Template; } }
+        public ObjectTemplate ObjectTemplate
+        {
+            get { return (ObjectTemplate) Template; }
+        }
 
         /// <summary>
         /// Holds a Key->Value reference to all property names and values for the JavaScript object that this managed object represents.
@@ -238,9 +244,9 @@
 
         public virtual InternalHandle NamedPropertyGetter(ref string propertyName)
         {
-            if (_Proxy != this)
+            if (ProxyInternal != this)
             {
-                var result = ((IV8ManagedObject)_Proxy).NamedPropertyGetter(ref propertyName);
+                var result = ((IV8ManagedObject)ProxyInternal).NamedPropertyGetter(ref propertyName);
                 if (!result.IsUndefined) return result;
             }
 
@@ -254,9 +260,9 @@
 
         public virtual InternalHandle NamedPropertySetter(ref string propertyName, InternalHandle value, V8PropertyAttributes attributes)
         {
-            if (_Proxy != this)
+            if (ProxyInternal != this)
             {
-                var result = ((IV8ManagedObject)_Proxy).NamedPropertySetter(ref propertyName, value, attributes);
+                var result = ((IV8ManagedObject)ProxyInternal).NamedPropertySetter(ref propertyName, value, attributes);
                 if (!result.IsUndefined) return result;
             }
 
@@ -280,9 +286,9 @@
 
         public virtual V8PropertyAttributes? NamedPropertyQuery(ref string propertyName)
         {
-            if (_Proxy != this)
+            if (ProxyInternal != this)
             {
-                var result = ((IV8ManagedObject)_Proxy).NamedPropertyQuery(ref propertyName);
+                var result = ((IV8ManagedObject)ProxyInternal).NamedPropertyQuery(ref propertyName);
                 if (result != null) return result;
             }
 
@@ -291,9 +297,9 @@
 
         public virtual bool? NamedPropertyDeleter(ref string propertyName)
         {
-            if (_Proxy != this)
+            if (ProxyInternal != this)
             {
-                var result = ((IV8ManagedObject)_Proxy).NamedPropertyDeleter(ref propertyName);
+                var result = ((IV8ManagedObject)ProxyInternal).NamedPropertyDeleter(ref propertyName);
                 if (result != null) return result;
             }
 
@@ -307,9 +313,9 @@
 
         public virtual InternalHandle NamedPropertyEnumerator()
         {
-            if (_Proxy != this)
+            if (ProxyInternal != this)
             {
-                var result = ((IV8ManagedObject)_Proxy).NamedPropertyEnumerator();
+                var result = ((IV8ManagedObject)ProxyInternal).NamedPropertyEnumerator();
                 if (!result.IsUndefined) return result;
             }
 

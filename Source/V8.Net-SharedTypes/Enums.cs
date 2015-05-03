@@ -87,7 +87,7 @@
     /// <summary>
     /// The type of JavaScript values marshalled from the native side.
     /// </summary>
-    public enum JSValueType : int
+    public enum JSValueType
     {
         /// <summary>
         /// An error has occurred while attempting to execute the compiled script.

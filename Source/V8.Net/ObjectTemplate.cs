@@ -3,11 +3,6 @@
     using System;
     using System.Collections.Generic;
 
-#if V2 || V3 || V3_5
-#else
-    using System.Dynamic;
-#endif
-
     // ========================================================================================================================
 
     public interface ITemplate
@@ -20,7 +15,7 @@
 
     internal interface ITemplateInternal
     {
-        uint _ReferenceCount { get; set; }
+        uint ReferenceCountInternal { get; set; }
     }
 
     // ========================================================================================================================
@@ -47,9 +42,9 @@
             get { return m_parent; }
             internal set
             {
-                if (m_parent != null) ((ITemplateInternal)this)._ReferenceCount--;
+                if (m_parent != null) ((ITemplateInternal)this).ReferenceCountInternal--;
                 m_parent = value;
-                if (m_parent != null) ((ITemplateInternal)this)._ReferenceCount++;
+                if (m_parent != null) ((ITemplateInternal)this).ReferenceCountInternal++;
             }
         }
         private ITemplate m_parent;
@@ -59,7 +54,7 @@
         /// This is required because of the way the GC resets all weak references to null, and finalizes in no special order.
         /// Dependent objects are required to update this when they are finally collected (as some may become re-registered with the finalizer).
         /// </summary>
-        uint ITemplateInternal._ReferenceCount { get; set; }
+        uint ITemplateInternal.ReferenceCountInternal { get; set; }
 
         // --------------------------------------------------------------------------------------------------------------------
 
@@ -330,9 +325,9 @@
         ~ObjectTemplate()
         {
             if (!((IFinalizable)this).CanFinalize)
-                lock (Engine._ObjectsToFinalize)
+                lock (Engine.ObjectsToFinalizeInternal)
                 {
-                    Engine._ObjectsToFinalize.Add(this);
+                    Engine.ObjectsToFinalizeInternal.Add(this);
                     GC.ReRegisterForFinalize(this);
                 }
         }
@@ -341,7 +336,7 @@
 
         void IFinalizable.DoFinalize()
         {
-            if (((ITemplateInternal)this)._ReferenceCount == 0
+            if (((ITemplateInternal)this).ReferenceCountInternal == 0
             && Engine.GetObjects(this).Length == 0
             && Parent != null && Engine.GetObjects(Parent).Length == 0)
                 Dispose();
@@ -479,13 +474,13 @@
 
             try
             {
-                obj.Handle._Set(V8NetProxy.CreateObjectFromTemplate(NativeObjectTemplateProxy, obj.ID));
+                obj.Handle._Set(V8NetProxy.CreateObjectFromTemplate(NativeObjectTemplateProxy, obj.Id));
                 // (note: setting '_NativeObject' also updates it's '_ManagedObject' field if necessary.
             }
             catch (Exception)
             {
                 // ... something went wrong, so remove the new managed object ...
-                Engine._RemoveObjectWeakReference(obj.ID);
+                Engine._RemoveObjectWeakReference(obj.Id);
                 throw;
             }
 
@@ -496,7 +491,7 @@
         }
 
         /// <summary>
-        /// See <see cref="CreateObject<T>()"/>.
+        /// See <see cref="CreateObject{T}()"/>
         /// </summary>
         /// <param name="initialize">If true (default) then then 'IV8NativeObject.Initialize()' is called on the created object before returning.</param>
         public V8ManagedObject CreateObject()
@@ -505,7 +500,7 @@
         }
 
         /// <summary>
-        /// See <see cref="CreateObject<T>()"/>.
+        /// See <see cref="CreateObject{T}()"/>.
         /// </summary>
         /// <param name="initialize">If true (default) then then 'IV8NativeObject.Initialize()' is called on the created object before returning.</param>
         public V8ManagedObject CreateObject(bool initialize)

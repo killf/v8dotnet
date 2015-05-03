@@ -6,7 +6,7 @@
     // ========================================================================================================================
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public unsafe struct NativeV8EngineProxy
+    public struct NativeV8EngineProxy
     {
         public ProxyObjectType NativeClassType;
         public Int32 ID;
@@ -118,6 +118,7 @@
                 {
                     case JSValueType.Undefined: return "undefined";
                     case JSValueType.Null: return null;
+                    // ReSharper disable once NegativeEqualityExpression
                     case JSValueType.Bool: return !(V8Boolean == 0);
                     case JSValueType.BoolObject: return V8Boolean; // TODO: Test this.
                     case JSValueType.Int32: return (Int32)V8Integer;
@@ -153,7 +154,7 @@
     /// v8::DontEnum, etc.)
     /// </summary>
     [UnmanagedFunctionPointer(CallingConvention.StdCall, CharSet = CharSet.Unicode)]
-    public unsafe delegate V8PropertyAttributes ManagedNamedPropertyQuery(string propertyName, ref ManagedAccessorInfo info);
+    public delegate V8PropertyAttributes ManagedNamedPropertyQuery(string propertyName, ref ManagedAccessorInfo info);
 
     /// <summary>
     /// Returns a value indicating if the deleter intercepts the request.
@@ -161,7 +162,7 @@
     /// otherwise.
     /// </summary>
     [UnmanagedFunctionPointer(CallingConvention.StdCall, CharSet = CharSet.Unicode)]
-    public unsafe delegate int ManagedNamedPropertyDeleter(string propertyName, ref ManagedAccessorInfo info);
+    public delegate int ManagedNamedPropertyDeleter(string propertyName, ref ManagedAccessorInfo info);
 
     /// <summary>
     /// Returns an array containing the names of the properties the named
@@ -190,7 +191,7 @@
     /// The result is an integer encoding property attributes.
     /// </summary>
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-    public unsafe delegate V8PropertyAttributes ManagedIndexedPropertyQuery(Int32 index, ref ManagedAccessorInfo info);
+    public delegate V8PropertyAttributes ManagedIndexedPropertyQuery(Int32 index, ref ManagedAccessorInfo info);
 
     /// <summary>
     /// Returns a value indicating if the deleter intercepts the request.
@@ -198,7 +199,7 @@
     /// otherwise.
     /// </summary>
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-    public unsafe delegate int ManagedIndexedPropertyDeleter(Int32 index, ref ManagedAccessorInfo info);
+    public delegate int ManagedIndexedPropertyDeleter(Int32 index, ref ManagedAccessorInfo info);
 
     /// <summary>
     /// Returns an array containing the indices of the properties the
@@ -226,7 +227,7 @@
     // ========================================================================================================================
 
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-    public unsafe delegate HandleProxy* ManagedJSFunctionCallback(Int32 managedObjectID, bool isConstructCall, HandleProxy* _this, HandleProxy** args, Int32 argCount);
+    public unsafe delegate HandleProxy* ManagedJSFunctionCallback(Int32 managedObjectId, bool isConstructCall, HandleProxy* _this, HandleProxy** args, Int32 argCount);
     // ('IntPtr' == HandleProxy*)
 
     // ========================================================================================================================
